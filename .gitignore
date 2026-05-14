@@ -1,0 +1,6 @@
+.venv
+doc/
+backup.py
+Constraint.md
+generate_84_cases.py
+patient_sim.py

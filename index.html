@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Patient Simulator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background-color: #f4f7f6; }
+        #chat-box { background: white; border-radius: 10px; height: 400px; overflow-y: auto; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .msg { margin-bottom: 15px; padding: 10px; border-radius: 10px; max-width: 80%; line-height: 1.4; word-wrap: break-word; }
+        .user { background-color: #d1e7dd; color: #0f5132; margin-left: auto; text-align: right; }
+        .patient { background-color: #f8d7da; color: #842029; margin-right: auto; }
+        .btn-container { text-align: center; gap: 10px; display: flex; justify-content: center; flex-wrap: wrap; }
+        button { background-color: #0d6efd; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 25px; cursor: pointer; transition: 0.3s; }
+        button:hover { opacity: 0.8; }
+        #status { display: block; text-align: center; margin-top: 10px; color: #6c757d; font-size: 14px; width: 100%; }
+
+        /* Modal Styles */
+        #eval-modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 30px; border-radius: 15px; width: 80%; max-width: 600px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .score-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        .score-stars { color: #ffc107; font-size: 18px; }
+        .feedback-section { margin-top: 20px; }
+        .feedback-item { margin-bottom: 10px; }
+        .strength { color: #198754; font-weight: bold; }
+        .weakness { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center; color: #333;">🩺 AI Patient Simulator</h2>
+    <div id="chat-box"></div>
+    <div class="btn-container">
+        <button id="mic-btn" onclick="toggleDictation()">🎤 คลิกเพื่อพูด</button>
+        <button id="end-btn" onclick="endSimulation()" style="background-color: #6c757d;">🏁 จบการซักประวัติ</button>
+        <button id="new-btn" onclick="newSimulation()" style="background-color: #198754; display: none;">🆕 เคสใหม่</button>
+        <button id="view-eval-btn" onclick="showEvaluation()" style="background-color: #ffc107; color: #000; display: none;">📊 ดูผลการประเมิน</button>
+        <span id="status">กำลังเชื่อมต่อ...</span>
+    </div>
+
+    <!-- Evaluation Modal -->
+    <div id="eval-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="text-align: center;">📊 ผลการประเมินการซักประวัติ</h2>
+            <div id="eval-results">
+                <!-- Results will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const status = document.getElementById('status');
+        const micBtn = document.getElementById('mic-btn');
+        let sessionId = "session_" + Math.random().toString(36).substring(7);
+
+        let isRecording = false;
+        let recognition = null;
+        let tempMsgDiv = null;
+        let socket = null;
+        let currentPatientMsgDiv = null;
+        let ttsQueue = [];
+        let isSpeaking = false;
+        let sentenceBuffer = "";
+
+        function connectWS() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
+
+            socket.onopen = () => {
+                status.innerText = "✅ ระบบพร้อมทำงาน...";
+            };
+
+            socket.onmessage = (event) => {
+                const text = event.data;
+                
+                if (text === "__END__") {
+                    if (sentenceBuffer.trim()) {
+                        enqueueTTS(sentenceBuffer.trim());
+                        sentenceBuffer = "";
+                    }
+                    status.innerText = "✅ รอรับคำถามต่อไป...";
+                    return;
+                }
+
+                if (!currentPatientMsgDiv) {
+                    currentPatientMsgDiv = document.createElement('div');
+                    currentPatientMsgDiv.className = 'msg patient';
+                    currentPatientMsgDiv.innerText = "🤕 ผู้ป่วย: ";
+                    chatBox.appendChild(currentPatientMsgDiv);
+                }
+
+                currentPatientMsgDiv.innerText += text;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                sentenceBuffer += text;
+                const endChars = /[.!?。！？\n]/;
+                if (endChars.test(text)) {
+                    enqueueTTS(sentenceBuffer.trim());
+                    sentenceBuffer = "";
+                }
+            };
+
+            socket.onclose = () => {
+                status.innerText = "❌ การเชื่อมต่อหลุด... กำลังลองใหม่";
+                setTimeout(connectWS, 3000);
+            };
+        }
+
+        connectWS();
+
+        function toggleDictation() {
+            if (isRecording) {
+                if (recognition) recognition.stop();
+                return;
+            }
+
+            if (window.hasOwnProperty('webkitSpeechRecognition')) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = "th-TH";
+
+                let final_transcript = '';
+
+                recognition.onstart = function() {
+                    isRecording = true;
+                    status.innerText = "🔴 กำลังฟัง... (พูดจบแล้วคลิกปุ่มอีกครั้งเพื่อส่ง)";
+                    micBtn.innerText = "🛑 คลิกเพื่อส่งคำถาม";
+                    micBtn.style.backgroundColor = "#dc3545";
+                    
+                    tempMsgDiv = document.createElement('div');
+                    tempMsgDiv.className = 'msg user';
+                    tempMsgDiv.innerText = "👨‍⚕️ คุณ: ...";
+                    chatBox.appendChild(tempMsgDiv);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    currentPatientMsgDiv = null;
+                };
+
+                recognition.onresult = function(e) {
+                    let interim_transcript = '';
+                    for (let i = e.resultIndex; i < e.results.length; ++i) {
+                        if (e.results[i].isFinal) final_transcript += e.results[i][0].transcript;
+                        else interim_transcript += e.results[i][0].transcript;
+                    }
+                    if (tempMsgDiv) tempMsgDiv.innerText = "👨‍⚕️ คุณ: " + final_transcript + interim_transcript;
+                };
+
+                recognition.onend = function() {
+                    isRecording = false;
+                    micBtn.innerText = "🎤 คลิกเพื่อพูด";
+                    micBtn.style.backgroundColor = "#0d6efd";
+
+                    if (final_transcript.trim() !== '') {
+                        sendViaWS(final_transcript);
+                    } else if (tempMsgDiv) {
+                        tempMsgDiv.remove();
+                    }
+                };
+
+                recognition.start();
+            }
+        }
+
+        function sendViaWS(text) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ session_id: sessionId, student_text: text }));
+            }
+        }
+
+        function endSimulation() {
+            if (confirm("คุณแน่ใจหรือไม่ว่าต้องการจบการซักประวัติ?")) {
+                sendViaWS("__END_SESSION__");
+                micBtn.disabled = true;
+                document.getElementById('end-btn').style.display = 'none';
+                document.getElementById('new-btn').style.display = 'inline-block';
+                document.getElementById('view-eval-btn').style.display = 'inline-block';
+                status.innerText = "🏁 บันทึกประวัติเรียบร้อยแล้ว";
+            }
+        }
+
+        function newSimulation() { location.reload(); }
+
+        async function showEvaluation() {
+            const modal = document.getElementById('eval-modal');
+            const resultsDiv = document.getElementById('eval-results');
+            modal.style.display = 'block';
+            resultsDiv.innerHTML = "<p style='text-align:center;'>⏳ กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
+
+            try {
+                const response = await fetch(`/api/evaluate/${sessionId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p style='color:red;'>❌ เกิดข้อผิดพลาด: ${data.error}</p>`;
+                    return;
+                }
+
+                let html = `<div style='text-align:center; font-size: 24px; margin-bottom: 20px;'>คะแนนรวม: <b>${data.overall_score}/5</b></div>`;
+                
+                for (const [key, score] of Object.entries(data.scores)) {
+                    const label = key.replace(/_/g, ' ').toUpperCase();
+                    html += `
+                        <div class="score-row">
+                            <span>${label}</span>
+                            <span class="score-stars">${'⭐'.repeat(score)}</span>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="feedback-section">
+                        <p class="strength">✅ จุดเด่น:</p>
+                        <ul>${data.feedback.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+                        <p class="weakness">❌ จุดที่ควรพัฒนา:</p>
+                        <ul>${data.feedback.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+                        <p>💡 <b>คำแนะนำเพิ่มเติม:</b> ${data.feedback.suggestion}</p>
+                    </div>
+                `;
+                resultsDiv.innerHTML = html;
+
+            } catch (e) {
+                resultsDiv.innerHTML = `<p style='color:red;'>❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้</p>`;
+            }
+        }
+
+        function closeModal() { document.getElementById('eval-modal').style.display = 'none'; }
+
+        // --- TTS Queue Logic ---
+        function enqueueTTS(text) {
+            if (!text.trim()) return;
+            ttsQueue.push(text);
+            processTTSQueue();
+        }
+
+        function processTTSQueue() {
+            if (isSpeaking || ttsQueue.length === 0) return;
+            isSpeaking = true;
+            const text = ttsQueue.shift();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "th-TH";
+            utterance.onend = () => { isSpeaking = false; processTTSQueue(); };
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>

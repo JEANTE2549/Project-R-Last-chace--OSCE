@@ -1,0 +1,1010 @@
+[
+    {
+        "id": "case_01",
+        "chief_complaint": "ไข้ (Fever)",
+        "scenario_name": "โรคติดเชื้อทั่วไป (Infectious disease)",
+        "osce_checklist": "onset, duration, pattern, chills",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ไข้ (Fever)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_02",
+        "chief_complaint": "น้ำหนักลด (Weight loss)",
+        "scenario_name": "สงสัยโรคมะเร็งหรือไทรอยด์เป็นพิษ",
+        "osce_checklist": "amount, duration, appetite, associated_symptoms",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ น้ำหนักลด (Weight loss)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_03",
+        "chief_complaint": "บวม (Edema)",
+        "scenario_name": "โรคไตหรือโรคหัวใจ",
+        "osce_checklist": "onset, location, pitting, dyspnea",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ บวม (Edema)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_04",
+        "chief_complaint": "อ่อนเพลีย (Fatigue)",
+        "scenario_name": "ภาวะโลหิตจาง (Anemia)",
+        "osce_checklist": "duration, sleep, diet, stress",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ อ่อนเพลีย (Fatigue)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_05",
+        "chief_complaint": "ตัวเหลืองตาเหลือง (Jaundice)",
+        "scenario_name": "โรคตับ (Hepatitis) หรือถุงน้ำดี",
+        "osce_checklist": "onset, urine_color, stool_color, abdominal_pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ตัวเหลืองตาเหลือง (Jaundice)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_06",
+        "chief_complaint": "ซีด (Pallor)",
+        "scenario_name": "เลือดออกในทางเดินอาหารหรือโลหิตจาง",
+        "osce_checklist": "onset, bleeding_site, fatigue, diet",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ซีด (Pallor)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_07",
+        "chief_complaint": "ผื่นคัน (Rash/Pruritus)",
+        "scenario_name": "ลมพิษ (Urticaria) หรือภูมิแพ้",
+        "osce_checklist": "onset, distribution, progression, triggers",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ผื่นคัน (Rash/Pruritus)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_08",
+        "chief_complaint": "แผลเรื้อรัง (Chronic ulcer)",
+        "scenario_name": "เบาหวาน (Diabetic foot ulcer)",
+        "osce_checklist": "duration, underlying_disease, discharge, pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ แผลเรื้อรัง (Chronic ulcer)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_09",
+        "chief_complaint": "ก้อนที่ผิวหนัง (Skin mass)",
+        "scenario_name": "ฝี (Abscess) หรือซีสต์",
+        "osce_checklist": "duration, size_change, pain, signs_of_inflammation",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ก้อนที่ผิวหนัง (Skin mass)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_10",
+        "chief_complaint": "ปวดศีรษะ (Headache)",
+        "scenario_name": "ไมเกรน (Migraine) หรือความดันโลหิตสูง",
+        "osce_checklist": "onset, location, character, exacerbating_factors",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดศีรษะ (Headache)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_11",
+        "chief_complaint": "เวียนศีรษะ (Vertigo/Dizziness)",
+        "scenario_name": "หินปูนในหูชั้นในหลุด (BPPV)",
+        "osce_checklist": "onset, character, head_movement, nausea",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เวียนศีรษะ (Vertigo/Dizziness)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_12",
+        "chief_complaint": "ตามัว (Visual loss)",
+        "scenario_name": "ต้อกระจก (Cataract) หรือเบาหวานขึ้นตา",
+        "osce_checklist": "onset, one/both_eyes, pain, progression",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ตามัว (Visual loss)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_13",
+        "chief_complaint": "ตาแดง (Red eye)",
+        "scenario_name": "เยื่อบุตาอักเสบ (Conjunctivitis)",
+        "osce_checklist": "onset, discharge, itching, visual_acuity",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ตาแดง (Red eye)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_14",
+        "chief_complaint": "ปวดหู (Earache)",
+        "scenario_name": "หูชั้นกลางอักเสบ (Acute Otitis Media)",
+        "osce_checklist": "onset, fever, hearing, discharge",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดหู (Earache)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_15",
+        "chief_complaint": "หูอื้อ/หูตึง (Hearing loss)",
+        "scenario_name": "ขี้หูอุดตัน หรือประสาทหูเสื่อม",
+        "osce_checklist": "onset, trauma, noise_exposure, tinnitus",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หูอื้อ/หูตึง (Hearing loss)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_16",
+        "chief_complaint": "เลือดกำเดาไหล (Epistaxis)",
+        "scenario_name": "ความดันโลหิตสูงหรือภูมิแพ้จมูก",
+        "osce_checklist": "frequency, amount, underlying_disease, trauma",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เลือดกำเดาไหล (Epistaxis)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_17",
+        "chief_complaint": "เจ็บคอ (Sore throat)",
+        "scenario_name": "คอหอยอักเสบ (Pharyngitis/Tonsillitis)",
+        "osce_checklist": "onset, fever, cough, swallowing_difficulty",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เจ็บคอ (Sore throat)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_18",
+        "chief_complaint": "เสียงแหบ (Hoarseness)",
+        "scenario_name": "กล่องเสียงอักเสบ (Laryngitis)",
+        "osce_checklist": "duration, smoking_history, acid_reflux, weight_loss",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เสียงแหบ (Hoarseness)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_19",
+        "chief_complaint": "ก้อนที่คอ (Neck mass)",
+        "scenario_name": "ไทรอยด์โต (Goiter/Thyroid nodule)",
+        "osce_checklist": "duration, size_change, pain, difficulty_swallowing",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ก้อนที่คอ (Neck mass)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_20",
+        "chief_complaint": "ไอ (Cough)",
+        "scenario_name": "ปอดอักเสบ (Pneumonia) หรือวัณโรค",
+        "osce_checklist": "onset, character, sputum, fever",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ไอ (Cough)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_21",
+        "chief_complaint": "หอบเหนื่อย (Dyspnea)",
+        "scenario_name": "หอบหืด (Asthma) หรือหัวใจล้มเหลว",
+        "osce_checklist": "onset, triggers, lying_flat, orthopnea",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หอบเหนื่อย (Dyspnea)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_22",
+        "chief_complaint": "ไอเป็นเลือด (Hemoptysis)",
+        "scenario_name": "วัณโรคปอด (Pulmonary TB)",
+        "osce_checklist": "amount, frequency, weight_loss, night_sweats",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ไอเป็นเลือด (Hemoptysis)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_23",
+        "chief_complaint": "เจ็บหน้าอก (Chest pain)",
+        "scenario_name": "กล้ามเนื้อหัวใจขาดเลือด (Acute Myocardial Infarction)",
+        "osce_checklist": "onset, character, radiation, precipitating_factors",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เจ็บหน้าอก (Chest pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_24",
+        "chief_complaint": "ใจสั่น (Palpitation)",
+        "scenario_name": "ไทรอยด์เป็นพิษ หรือหัวใจเต้นผิดจังหวะ",
+        "osce_checklist": "onset, triggers, syncope, weight_loss",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ใจสั่น (Palpitation)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_25",
+        "chief_complaint": "หน้ามืด/เป็นลม (Syncope)",
+        "scenario_name": "ภาวะน้ำตาลในเลือดต่ำ หรือหัวใจเต้นผิดจังหวะ",
+        "osce_checklist": "events_before, past_history, medications, recovery",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หน้ามืด/เป็นลม (Syncope)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_26",
+        "chief_complaint": "ปวดท้อง (Abdominal pain)",
+        "scenario_name": "ไส้ติ่งอักเสบ (Acute Appendicitis)",
+        "osce_checklist": "onset, location, severity, associated_symptoms",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดท้อง (Abdominal pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_27",
+        "chief_complaint": "คลื่นไส้อาเจียน (Nausea/Vomiting)",
+        "scenario_name": "อาหารเป็นพิษ (Food poisoning)",
+        "osce_checklist": "frequency, content, abdominal_pain, diarrhea",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ คลื่นไส้อาเจียน (Nausea/Vomiting)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_28",
+        "chief_complaint": "ท้องร่วง (Diarrhea)",
+        "scenario_name": "ลำไส้อักเสบเฉียบพลัน (Acute Gastroenteritis)",
+        "osce_checklist": "frequency, stool_character, hydration_status, sick_contact",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ท้องร่วง (Diarrhea)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_29",
+        "chief_complaint": "ท้องผูก (Constipation)",
+        "scenario_name": "ลำไส้อุดตัน หรือท้องผูกเรื้อรัง",
+        "osce_checklist": "frequency, stool_character, abdominal_distension, weight_loss",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ท้องผูก (Constipation)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_30",
+        "chief_complaint": "อาเจียนเป็นเลือด (Hematemesis)",
+        "scenario_name": "แผลในกระเพาะอาหาร (Peptic Ulcer Bleeding)",
+        "osce_checklist": "amount, NSAIDs_history, alcohol, melena",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ อาเจียนเป็นเลือด (Hematemesis)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_31",
+        "chief_complaint": "ถ่ายดำ/ถ่ายเป็นเลือด (Melena/Hematochezia)",
+        "scenario_name": "ริดสีดวงทวาร หรือเลือดออกในลำไส้",
+        "osce_checklist": "color, amount, pain_on_defecation, constipation",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ถ่ายดำ/ถ่ายเป็นเลือด (Melena/Hematochezia)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_32",
+        "chief_complaint": "กลืนลำบาก (Dysphagia)",
+        "scenario_name": "กรดไหลย้อน (GERD) หรือมะเร็งหลอดอาหาร",
+        "osce_checklist": "onset, solids_vs_liquids, weight_loss, heartburn",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ กลืนลำบาก (Dysphagia)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_33",
+        "chief_complaint": "ก้อนในท้อง (Abdominal mass)",
+        "scenario_name": "เนื้องอกในมดลูก (Myoma) หรือตับโต",
+        "osce_checklist": "location, size_change, pain, menstrual_history",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ก้อนในท้อง (Abdominal mass)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_34",
+        "chief_complaint": "ปัสสาวะแสบขัด (Dysuria)",
+        "scenario_name": "กระเพาะปัสสาวะอักเสบ (Urinary Tract Infection)",
+        "osce_checklist": "frequency, urgency, character, flank_pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปัสสาวะแสบขัด (Dysuria)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_35",
+        "chief_complaint": "ปัสสาวะเป็นเลือด (Hematuria)",
+        "scenario_name": "นิ่วในทางเดินปัสสาวะ (Urinary Stone)",
+        "osce_checklist": "onset, pain, colicky, blood_clots",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปัสสาวะเป็นเลือด (Hematuria)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_36",
+        "chief_complaint": "ปัสสาวะบ่อย/มาก (Polyuria)",
+        "scenario_name": "เบาหวาน (Diabetes Mellitus)",
+        "osce_checklist": "frequency, amount, thirst, weight_loss",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปัสสาวะบ่อย/มาก (Polyuria)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_37",
+        "chief_complaint": "ปัสสาวะไม่ออก (Urinary retention)",
+        "scenario_name": "ต่อมลูกหมากโต (BPH)",
+        "osce_checklist": "onset, hesitancy, weak_stream, lower_abdominal_pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปัสสาวะไม่ออก (Urinary retention)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_38",
+        "chief_complaint": "ปวดบั้นเอว (Flank pain)",
+        "scenario_name": "กรวยไตอักเสบ (Acute Pyelonephritis)",
+        "osce_checklist": "onset, fever, dysuria, radiation",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดบั้นเอว (Flank pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_39",
+        "chief_complaint": "ปวดอัณฑะ/ก้อนที่อัณฑะ (Scrotal pain/mass)",
+        "scenario_name": "อัณฑะบิดขั้ว (Testicular torsion) หรือไส้เลื่อน",
+        "osce_checklist": "onset, severity, trauma_history, reducibility",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดอัณฑะ/ก้อนที่อัณฑะ (Scrotal pain/mass)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_40",
+        "chief_complaint": "ประจำเดือนขาด (Amenorrhea)",
+        "scenario_name": "การตั้งครรภ์ (Pregnancy) หรือ PCOS",
+        "osce_checklist": "LMP, sexual_history, weight_change, hirsutism",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ประจำเดือนขาด (Amenorrhea)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_41",
+        "chief_complaint": "เลือดออกผิดปกติทางช่องคลอด (Abnormal vaginal bleeding)",
+        "scenario_name": "แท้งบุตร (Abortion) หรือเนื้องอกมดลูก",
+        "osce_checklist": "amount, duration, pain, pregnancy_test",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เลือดออกผิดปกติทางช่องคลอด (Abnormal vaginal bleeding)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_42",
+        "chief_complaint": "ตกขาว (Vaginal discharge)",
+        "scenario_name": "ช่องคลอดอักเสบ (Vaginitis / PID)",
+        "osce_checklist": "color, odor, itching, lower_abdominal_pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ตกขาว (Vaginal discharge)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_43",
+        "chief_complaint": "ปวดท้องน้อย (Pelvic pain)",
+        "scenario_name": "ปีกมดลูกอักเสบ (PID) หรือถุงน้ำรังไข่แตก",
+        "osce_checklist": "onset, relation_to_menses, fever, discharge",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดท้องน้อย (Pelvic pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_44",
+        "chief_complaint": "ก้อนที่เต้านม (Breast mass)",
+        "scenario_name": "ก้อนไขมัน/ซีสต์ (Fibroadenoma) หรือมะเร็ง",
+        "osce_checklist": "duration, size_change, pain, skin_change",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ก้อนที่เต้านม (Breast mass)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_45",
+        "chief_complaint": "เจ็บเต้านม (Breast pain)",
+        "scenario_name": "เต้านมอักเสบ (Mastitis) หรือปวดคัดตึงก่อนเมนส์",
+        "osce_checklist": "relation_to_menses, redness, fever, lactation",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เจ็บเต้านม (Breast pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_46",
+        "chief_complaint": "แขนขาอ่อนแรง (Weakness)",
+        "scenario_name": "โรคหลอดเลือดสมอง (Ischemic Stroke)",
+        "osce_checklist": "onset, progression, facial_weakness, speech",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ แขนขาอ่อนแรง (Weakness)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_47",
+        "chief_complaint": "ชา (Numbness)",
+        "scenario_name": "ปลายประสาทอักเสบ หรือหมอนรองกระดูกทับประสาท",
+        "osce_checklist": "distribution, progression, weakness, DM_history",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ชา (Numbness)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_48",
+        "chief_complaint": "ชัก (Seizure)",
+        "scenario_name": "โรคลมชัก (Epilepsy) หรือไข้ชักในเด็ก",
+        "osce_checklist": "duration, aura, postictal, trauma_history",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ชัก (Seizure)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_49",
+        "chief_complaint": "สับสน/ซึม (Alteration of consciousness)",
+        "scenario_name": "น้ำตาลในเลือดต่ำ หรือติดเชื้อในกระแสเลือด",
+        "osce_checklist": "onset, baseline_status, fever, substance_use",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ สับสน/ซึม (Alteration of consciousness)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_50",
+        "chief_complaint": "หลงลืม (Memory loss)",
+        "scenario_name": "สมองเสื่อม (Dementia)",
+        "osce_checklist": "duration, daily_functioning, wandering, mood_changes",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หลงลืม (Memory loss)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_51",
+        "chief_complaint": "สั่น (Tremor)",
+        "scenario_name": "พาร์กินสัน (Parkinson's disease) หรือไทรอยด์เป็นพิษ",
+        "osce_checklist": "resting_vs_action, rigidity, bradykinesia, weight_loss",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ สั่น (Tremor)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_52",
+        "chief_complaint": "ปวดข้อ (Joint pain)",
+        "scenario_name": "เกาต์ (Gout) หรือข้อเข่าเสื่อม (OA)",
+        "osce_checklist": "onset, number_of_joints, morning_stiffness, swelling",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดข้อ (Joint pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_53",
+        "chief_complaint": "ปวดหลัง (Back pain)",
+        "scenario_name": "กล้ามเนื้ออักเสบ หรือหมอนรองกระดูกทับประสาท",
+        "osce_checklist": "onset, radiation, numbness, weakness",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดหลัง (Back pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_54",
+        "chief_complaint": "ปวดกล้ามเนื้อ (Muscle pain)",
+        "scenario_name": "ไข้หวัดใหญ่ หรือออฟฟิศซินโดรม",
+        "osce_checklist": "onset, fever, trauma, ergonomics",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปวดกล้ามเนื้อ (Muscle pain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_55",
+        "chief_complaint": "บาดเจ็บที่ศีรษะ (Head injury)",
+        "scenario_name": "เลือดออกในสมอง (Intracranial Hemorrhage)",
+        "osce_checklist": "mechanism, LOC, amnesia, vomiting",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ บาดเจ็บที่ศีรษะ (Head injury)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_56",
+        "chief_complaint": "บาดเจ็บที่ทรวงอก (Chest trauma)",
+        "scenario_name": "ซี่โครงหัก (Rib fracture) หรือลมในช่องอก",
+        "osce_checklist": "mechanism, dyspnea, pain_on_breathing, breath_sounds",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ บาดเจ็บที่ทรวงอก (Chest trauma)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_57",
+        "chief_complaint": "บาดเจ็บที่ช่องท้อง (Abdominal trauma)",
+        "scenario_name": "ตับ/ม้ามฉีกขาด (Blunt Abdominal Trauma)",
+        "osce_checklist": "mechanism, seatbelt_sign, abdominal_guarding, shock",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ บาดเจ็บที่ช่องท้อง (Abdominal trauma)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_58",
+        "chief_complaint": "บาดเจ็บที่กระดูกและข้อ (Extremity trauma)",
+        "scenario_name": "กระดูกหัก (Fracture)",
+        "osce_checklist": "mechanism, deformity, swelling, neurovascular_status",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ บาดเจ็บที่กระดูกและข้อ (Extremity trauma)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_59",
+        "chief_complaint": "แผลไฟไหม้/น้ำร้อนลวก (Burns)",
+        "scenario_name": "แผลไฟไหม้ (Burn injury)",
+        "osce_checklist": "mechanism, %BSA, depth, inhalation_injury",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ แผลไฟไหม้/น้ำร้อนลวก (Burns)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_60",
+        "chief_complaint": "สัตว์กัด (Animal bite)",
+        "scenario_name": "สุนัขกัด (Dog bite) - เสี่ยงพิษสุนัขบ้า",
+        "osce_checklist": "animal_status, provocation, wound_care, vaccine_history",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ สัตว์กัด (Animal bite)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_61",
+        "chief_complaint": "งูกัด (Snake bite)",
+        "scenario_name": "งูพิษกัด (Venomous snake bite)",
+        "osce_checklist": "type_of_snake, local_reaction, bleeding/neuro_signs, tourniquet",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ งูกัด (Snake bite)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_62",
+        "chief_complaint": "ได้รับสารพิษ (Poisoning)",
+        "scenario_name": "กินยาพาราเซตามอลเกินขนาด",
+        "osce_checklist": "substance, amount, time, intention",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ได้รับสารพิษ (Poisoning)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_63",
+        "chief_complaint": "นอนไม่หลับ (Insomnia)",
+        "scenario_name": "ความเครียด หรือซึมเศร้า",
+        "osce_checklist": "duration, sleep_hygiene, stress, daytime_sleepiness",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ นอนไม่หลับ (Insomnia)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_64",
+        "chief_complaint": "อารมณ์เศร้า (Depressed mood)",
+        "scenario_name": "โรคซึมเศร้า (Major Depressive Disorder)",
+        "osce_checklist": "duration, SIGECAPS, suicidal_idea, trigger",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ อารมณ์เศร้า (Depressed mood)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_65",
+        "chief_complaint": "วิตกกังวล (Anxiety)",
+        "scenario_name": "โรควิตกกังวลทั่วไป (Generalized Anxiety Disorder)",
+        "osce_checklist": "duration, somatic_symptoms, panic_attacks, trigger",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ วิตกกังวล (Anxiety)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_66",
+        "chief_complaint": "หูแว่ว/ประสาทหลอน (Hallucination)",
+        "scenario_name": "จิตเภท (Schizophrenia) หรือสารเสพติด",
+        "osce_checklist": "duration, auditory_vs_visual, delusions, substance_use",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หูแว่ว/ประสาทหลอน (Hallucination)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_67",
+        "chief_complaint": "พัฒนาการล่าช้า (Delayed development)",
+        "scenario_name": "ออทิสติก หรือขาดการกระตุ้น",
+        "osce_checklist": "domain, milestone_loss, perinatal_history, family_history",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ พัฒนาการล่าช้า (Delayed development)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_68",
+        "chief_complaint": "ทารกตัวเหลือง (Neonatal jaundice)",
+        "scenario_name": "Physiological jaundice หรือ ABO incompatibility",
+        "osce_checklist": "onset, gestational_age, feeding, blood_group",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ทารกตัวเหลือง (Neonatal jaundice)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_69",
+        "chief_complaint": "เด็กร้องกวน (Crying infant)",
+        "scenario_name": "โคลิก (Colic) หรือลำไส้กลืนกัน (Intussusception)",
+        "osce_checklist": "duration, consolability, vomiting, stool_character",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เด็กร้องกวน (Crying infant)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_70",
+        "chief_complaint": "การคุมกำเนิด (Contraception counseling)",
+        "scenario_name": "ให้คำปรึกษายาคุมกำเนิด",
+        "osce_checklist": "LMP, medical_history, compliance, side_effects",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ การคุมกำเนิด (Contraception counseling)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_71",
+        "chief_complaint": "ฝากครรภ์ (ANC counseling)",
+        "scenario_name": "ฝากครรภ์ปกติ",
+        "osce_checklist": "LMP, parity, prior_complications, current_symptoms",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ฝากครรภ์ (ANC counseling)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_72",
+        "chief_complaint": "วัคซีน (Immunization counseling)",
+        "scenario_name": "ให้คำปรึกษาวัคซีนเด็ก/ผู้ใหญ่",
+        "osce_checklist": "age, underlying_disease, previous_vaccines, allergies",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ วัคซีน (Immunization counseling)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_73",
+        "chief_complaint": "ปรึกษาเลิกบุหรี่ (Smoking cessation)",
+        "scenario_name": "ให้คำปรึกษาเลิกสูบบุหรี่",
+        "osce_checklist": "pack_years, willingness_to_quit, past_attempts, triggers",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ปรึกษาเลิกบุหรี่ (Smoking cessation)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_74",
+        "chief_complaint": "น้ำหนักตัวเพิ่ม (Weight gain)",
+        "scenario_name": "ภาวะอ้วน หรือไทรอยด์ทำงานต่ำ (Hypothyroid)",
+        "osce_checklist": "onset, diet, exercise, cold_intolerance",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ น้ำหนักตัวเพิ่ม (Weight gain)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_75",
+        "chief_complaint": "ก้อนที่เต้านมชาย (Gynecomastia)",
+        "scenario_name": "ยารักษาโรค หรือตับแข็ง",
+        "osce_checklist": "onset, drugs, alcohol, pain",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ก้อนที่เต้านมชาย (Gynecomastia)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_76",
+        "chief_complaint": "มือสั่น (Tremor)",
+        "scenario_name": "ไทรอยด์เป็นพิษ หรือ Essential tremor",
+        "osce_checklist": "onset, resting_vs_action, family_history, anxiety",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ มือสั่น (Tremor)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_77",
+        "chief_complaint": "ท้องโต (Abdominal distension)",
+        "scenario_name": "มีน้ำในช่องท้อง (Ascites) จากตับแข็ง",
+        "osce_checklist": "onset, alcohol, jaundice, weight_change",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ท้องโต (Abdominal distension)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_78",
+        "chief_complaint": "ขาบวม (Leg swelling)",
+        "scenario_name": "หลอดเลือดดำอุดตัน (DVT) หรือหัวใจวาย",
+        "osce_checklist": "unilateral_vs_bilateral, pain, erythema, dyspnea",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ขาบวม (Leg swelling)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_79",
+        "chief_complaint": "แผลที่อวัยวะเพศ (Genital ulcer)",
+        "scenario_name": "ซิฟิลิส (Syphilis) หรือเริม (Herpes)",
+        "osce_checklist": "painful_vs_painless, multiple_vs_single, sexual_history, adenopathy",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ แผลที่อวัยวะเพศ (Genital ulcer)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_80",
+        "chief_complaint": "ตาเหลือง (Icterus)",
+        "scenario_name": "ดีซ่าน (Jaundice)",
+        "osce_checklist": "onset, itching, dark_urine, pale_stool",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ตาเหลือง (Icterus)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_81",
+        "chief_complaint": "หัวใจเต้นผิดจังหวะ (Arrhythmia)",
+        "scenario_name": "Atrial Fibrillation",
+        "osce_checklist": "onset, palpitation, syncope, shortness_of_breath",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ หัวใจเต้นผิดจังหวะ (Arrhythmia)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_82",
+        "chief_complaint": "ผมร่วง (Hair loss)",
+        "scenario_name": "โรคภูมิแพ้ตัวเอง (SLE) หรือไทรอยด์",
+        "osce_checklist": "pattern, rash, joint_pain, weight_change",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ผมร่วง (Hair loss)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_83",
+        "chief_complaint": "เล็บผิดปกติ (Nail changes)",
+        "scenario_name": "เชื้อราที่เล็บ หรือคลับบิงฟิงเกอร์",
+        "osce_checklist": "onset, color_change, respiratory_symptoms, occupation",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ เล็บผิดปกติ (Nail changes)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    },
+    {
+        "id": "case_84",
+        "chief_complaint": "ความดันโลหิตสูง (Hypertension)",
+        "scenario_name": "Essential hypertension",
+        "osce_checklist": "headache, vision_change, family_history, diet",
+        "hidden_record": {
+            "symptom_detail": "คนไข้มาด้วยอาการ ความดันโลหิตสูง (Hypertension)",
+            "severity": "ปานกลางถึงมาก",
+            "onset": "เป็นมาประมาณ 1-3 วัน",
+            "associated_symptoms": "มีอาการร่วมที่สอดคล้องกับโรค"
+        }
+    }
+]
