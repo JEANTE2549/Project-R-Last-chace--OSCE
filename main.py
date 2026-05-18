@@ -17,7 +17,7 @@ ollama_client = ollama.AsyncClient(host='http://127.0.0.1:11434')
 # --- 1. Database Connection ---
 print("กำลังเชื่อมต่อกับ medical_db...")
 try:
-    db_client = chromadb.PersistentClient(path="./medical_db")
+    db_client = chromadb.PersistentClient(path="./data/medical_db")
     collection = db_client.get_collection("sor_ror_wor_cases")
     all_cases = collection.get()
     print(f"โหลดข้อมูลสำเร็จ {len(all_cases['ids'])} เคส")

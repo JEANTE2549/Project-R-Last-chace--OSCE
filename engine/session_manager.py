@@ -2,10 +2,10 @@ import json
 import os
 from datetime import datetime
 
-SESSIONS_DIR = "sessions"
+SESSIONS_DIR = "logs/sessions"
 
 if not os.path.exists(SESSIONS_DIR):
-    os.makedirs(SESSIONS_DIR)
+    os.makedirs(SESSIONS_DIR, exist_ok=True)
 
 def save_session(session_id: str, data: dict):
     """Saves session data to a local JSON file."""
