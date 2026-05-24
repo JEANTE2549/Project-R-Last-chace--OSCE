@@ -4,3 +4,5 @@ pydantic
 ollama
 chromadb
 sentence-transformers
+httpx
+python-dotenv

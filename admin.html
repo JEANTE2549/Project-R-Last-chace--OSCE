@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSCE AI Patient Simulator Admin Console</title>
+    <!-- Scoped Test Styles: 
+         Inject global styling that does not leak into the Shadow DOM
+    -->
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #0f111a; /* Aggressive dark background on host */
+            color: #ffffff;
+            margin: 0;
+            padding: 30px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .host-header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 900px;
+            width: 100%;
+        }
+        .host-header h1 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #3b82f6;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .host-description {
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 13px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            box-sizing: border-box;
+        }
+        /* Conflicting button style test to verify Shadow DOM isolation */
+        button {
+            border: 4px dashed yellow !important;
+            font-family: 'Courier New' !important;
+        }
+    </style>
+    <!-- Load the Embeddable JS Plugin SDK -->
+    <script src="/patient-simulator-widget.js"></script>
+</head>
+<body>
+    <div class="host-header">
+        <h1>🏥 University OSCE Instructor Console</h1>
+    </div>
+    
+    <div class="host-description">
+        นี่คือหน้าจอแผงควบคุมหลักสำหรับคณาจารย์และผู้ประเมินผล (Embeddable Admin Panel) 
+        โดยถูกจำกัดขอบเขตการดีไซน์และ CSS ให้อยู่ภายใต้ <b>Shadow DOM</b> อย่างสมบูรณ์ 
+        หมดกังวลเรื่องการปนเปื้อนของธีมจากหน้าเว็บสถาบันดั้งเดิม
+    </div>
+
+    <!-- Inject the Embeddable Instructor Admin Dashboard Plugin -->
+    <ai-patient-admin id="my-admin"></ai-patient-admin>
+
+    <script>
+        const adminComponent = document.getElementById('my-admin');
+        const serverUrl = window.location.origin;
+        adminComponent.setAttribute('server-url', serverUrl);
+        console.log("OSCE Instructor Admin Widget loaded successfully.");
+    </script>
+</body>
+</html>
