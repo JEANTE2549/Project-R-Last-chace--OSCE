@@ -104,7 +104,7 @@
 
         // Match current protocol-aware connection or fallback to local backend (http://127.0.0.1:8000) if hosted statically on a public site (like GitHub Pages)
         let serverUrl = localStorage.getItem('osce_server_url') || window.location.origin;
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !localStorage.getItem('osce_server_url')) {
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.location.hostname.includes('ngrok') && !localStorage.getItem('osce_server_url')) {
             serverUrl = 'http://127.0.0.1:8000';
         }
         simulator.setAttribute('server-url', serverUrl);
