@@ -15,6 +15,8 @@ from engine.evaluator import evaluate_session
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:latest")
 
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
@@ -80,7 +82,7 @@ app.add_middleware(
 )
 
 # Initialize Ollama client globally for better performance and reliability
-ollama_client = ollama.AsyncClient(host='http://127.0.0.1:11434')
+ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)
 
 # --- 1. Database Connection ---
 print("กำลังเชื่อมต่อกับ medical_db (ChromaDB)...")
@@ -720,7 +722,7 @@ async def websocket_endpoint(websocket: WebSocket):
             session_data['history'].append({'role': 'user', 'content': student_text})
             
             # Retrieve GGUF custom model & parameters
-            selected_model = client_config.get("model", "llama3.1:latest")
+            selected_model = client_config.get("model") or OLLAMA_MODEL
             temperature = float(client_config.get("temperature", 0.7))
             
             # --- Multi-Tier API Routing (Free vs. Paid) ---

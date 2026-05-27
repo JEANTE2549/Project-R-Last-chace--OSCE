@@ -652,9 +652,6 @@ class AIPatientSimulator extends HTMLElement {
                         <option value="free">ระบบประมวลผลในเครื่อง (Local Ollama) - ออฟไลน์ / ส่วนตัว</option>
                         <option value="paid">ระบบประมวลผลคลาวด์ภาษาไทย (Typhoon AI) - ความแม่นยำสูง</option>
                     </select>
-                    <button id="open-guidebook-btn" style="background-color: #334155; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
-                        คู่มือการติดตั้งระบบประมวลผลโลคอล...
-                    </button>
                     <span style="font-size: 11px; color: #64748b; display: block; margin-top: 8px; line-height: 1.4;">
                         *หมายเหตุ: คลาวด์ Typhoon มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
                     </span>
@@ -883,44 +880,12 @@ class AIPatientSimulator extends HTMLElement {
 
 
 
-                <!-- Local CORS Connection Setup Wizard -->
+                <!-- Generic Connection Error Screen -->
                 <div id="setup-wizard">
                     <div class="wizard-title">ตรวจไม่พบการเชื่อมต่อกับเซิร์ฟเวอร์หลังบ้าน</div>
                     <p style="font-size: 13px; color: #555; margin-bottom: 20px;">
-                        กรุณาตรวจสอบว่าเซิร์ฟเวอร์หลังบ้านและ Ollama รันอยู่ในเครื่องคอมพิวเตอร์ขณะนี้
+                        ไม่สามารถติดต่อเซิร์ฟเวอร์ระบบได้ กรุณาติดต่อผู้ดูแลระบบหรืออาจารย์ผู้คุมสอบ
                     </p>
-                    
-                    <div class="tab-container">
-                        <button class="tab-btn active" id="tab-win">Windows</button>
-                        <button class="tab-btn" id="tab-mac">Mac / Linux</button>
-                    </div>
-                    
-                    <div id="instructions-win" style="display: block;">
-                        <p style="font-size: 12px; text-align: left; margin: 5px 0;">1. เปิด PowerShell รันคำสั่งเปิด CORS สำหรับการเรียกใช้ในบราวเซอร์:</p>
-                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
-                            $env:OLLAMA_ORIGINS="*"; ollama serve
-                            <button class="copy-btn" id="copy-win" data-code='$env:OLLAMA_ORIGINS="*"; ollama serve' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
-                        </div>
-                        <p style="font-size: 12px; text-align: left; margin: 5px 0;">2. ในอีกหน้าต่าง ให้รันเซิร์ฟเวอร์ OSCE Backend:</p>
-                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
-                            .venv\\Scripts\\activate; uvicorn main:app --reload
-                            <button class="copy-btn" id="copy-backend-win" data-code='.venv\\Scripts\\activate; uvicorn main:app --reload' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
-                        </div>
-                    </div>
-                    
-                    <div id="instructions-mac" style="display: none;">
-                        <p style="font-size: 12px; text-align: left; margin: 5px 0;">1. เปิด Terminal รันคำสั่งเปิด CORS สำหรับการเรียกใช้ในบราวเซอร์:</p>
-                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
-                            OLLAMA_ORIGINS="*" ollama serve
-                            <button class="copy-btn" id="copy-mac" data-code='OLLAMA_ORIGINS="*" ollama serve' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
-                        </div>
-                        <p style="font-size: 12px; text-align: left; margin: 5px 0;">2. ในอีกหน้าต่าง ให้รันเซิร์ฟเวอร์ OSCE Backend:</p>
-                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
-                            source .venv/bin/activate; uvicorn main:app --reload
-                            <button class="copy-btn" id="copy-backend-mac" data-code='source .venv/bin/activate; uvicorn main:app --reload' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
-                        </div>
-                    </div>
-                    
                     <div style="margin-top: 25px;">
                         <button id="retry-conn-btn" style="background-color: #dc3545; width: 100%; padding: 12px; font-weight: bold;">พยายามเชื่อมต่อใหม่อีกครั้ง</button>
                     </div>
@@ -944,74 +909,6 @@ class AIPatientSimulator extends HTMLElement {
                     <div class="auth-desc" style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
                         ระบบตรวจไม่พบสิทธิ์และรหัสประจำตัวนักศึกษาของคุณ<br>
                         กรุณาล็อกอินเข้าสู่เว็บไซต์หลักของสถาบันเพื่อเรียกใช้งานเครื่องมือซักประวัติแพทย์จำลอง (OSCE)
-                    </div>
-                </div>
-            </div>
-
-            <!-- Local AI Guidebook Modal -->
-            <div id="guidebook-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 31000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white;">
-                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(30, 41, 59, 0.98); max-width: 480px; width: 100%; text-align: left; padding: 25px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-                    <h3 style="margin-top: 0; color: #60a5fa; border-bottom: 1px solid #475569; padding-bottom: 10px; font-size: 18px;">คู่มือติดตั้งระบบประมวลผลโลคอล (Local Ollama Setup)</h3>
-                    <div style="font-size: 12px; line-height: 1.6; color: #cbd5e1; max-height: 320px; overflow-y: auto; padding-right: 5px; box-sizing: border-box;">
-                        <p style="margin-top: 0;">เพื่อให้นักศึกษาสามารถเข้าใช้งานระบบจำลองแพทย์ผู้ป่วยผ่านหน่วยประมวลผลโลคอลส่วนตัว (Local Inference) โดยไม่เสียค่าใช้จ่ายและปลอดภัยจากการรั่วไหลของข้อมูล กรุณาดำเนินการตามขั้นตอนดังนี้:</p>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 1: ติดตั้งโปรแกรม Ollama</b>
-                            <p style="margin: 4px 0; color: #cbd5e1;">ดาวน์โหลดและติดตั้งโปรแกรมได้ที่ <a href="https://ollama.com" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">https://ollama.com</a> สำหรับ Windows หรือ macOS ของท่าน</p>
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 2: ติดตั้งโมเดลภาษาแพทย์มาตรฐาน</b>
-                            <p style="margin: 4px 0; color: #cbd5e1;">เปิด Terminal (macOS) หรือ PowerShell (Windows) และพิมพ์คำสั่งดังต่อไปนี้เพื่อดึงโมเดลภาษา Llama 3.1:</p>
-                            <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc; margin-top: 6px;">
-                                ollama run llama3.1
-                                <button class="copy-btn" data-code="ollama run llama3.1" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 3: เปิดเซิร์ฟเวอร์ Ollama พร้อมปลดล็อก CORS</b>
-                            <p style="margin: 4px 0; color: #cbd5e1;">บราวเซอร์ต้องการสิทธิ์ความปลอดภัยข้ามโดเมนในการเชื่อมต่อกับเซิร์ฟเวอร์ในเครื่อง:</p>
-                            
-                            <div style="margin-top: 8px;">
-                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ Windows PowerShell]</span>
-                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
-                                    $env:OLLAMA_ORIGINS="*"; ollama serve
-                                    <button class="copy-btn" data-code='$env:OLLAMA_ORIGINS="*"; ollama serve' style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
-                                </div>
-                            </div>
-                            
-                            <div style="margin-top: 8px;">
-                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ macOS / Linux Terminal]</span>
-                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
-                                    OLLAMA_ORIGINS="*" ollama serve
-                                    <button class="copy-btn" data-code='OLLAMA_ORIGINS="*" ollama serve' style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 5px;">
-                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 4: สตาร์ทเซิร์ฟเวอร์หลังบ้านของแพลตฟอร์ม (FastAPI Backend)</b>
-                            <p style="margin: 4px 0; color: #cbd5e1;">รันคำสั่งเหล่านี้ตามประเภทระบบปฏิบัติการในคอมพิวเตอร์ของท่านเพื่อคุมข้อมูลข้อสอบและประเมินผล:</p>
-                            <div style="margin-top: 8px;">
-                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ Windows PowerShell]</span>
-                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
-                                    .venv\Scripts\activate; uvicorn main:app --reload
-                                    <button class="copy-btn" data-code=".venv\Scripts\activate; uvicorn main:app --reload" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
-                                </div>
-                            </div>
-                            <div style="margin-top: 8px;">
-                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ macOS Terminal]</span>
-                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
-                                    source .venv/bin/activate; uvicorn main:app --reload
-                                    <button class="copy-btn" data-code="source .venv/bin/activate; uvicorn main:app --reload" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: 20px; text-align: right;">
-                        <button id="close-guidebook-btn" style="background: #475569; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s;">ปิดหน้าต่างคู่มือ</button>
                     </div>
                 </div>
             </div>
@@ -1061,10 +958,6 @@ class AIPatientSimulator extends HTMLElement {
         
         // Wizard elements
         this.setupWizard = this.shadowDOM.getElementById('setup-wizard');
-        this.tabWin = this.shadowDOM.getElementById('tab-win');
-        this.tabMac = this.shadowDOM.getElementById('tab-mac');
-        this.instructionsWin = this.shadowDOM.getElementById('instructions-win');
-        this.instructionsMac = this.shadowDOM.getElementById('instructions-mac');
         this.retryConnBtn = this.shadowDOM.getElementById('retry-conn-btn');
         
         // Pre-Encounter Portal elements
@@ -1109,10 +1002,7 @@ class AIPatientSimulator extends HTMLElement {
         this.deletePersonaBtn = this.shadowDOM.getElementById('delete-persona-btn');
         this.preExamDeletePersonaBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
 
-        // Guidebook Elements
-        this.openGuidebookBtn = this.shadowDOM.getElementById('open-guidebook-btn');
-        this.closeGuidebookBtn = this.shadowDOM.getElementById('close-guidebook-btn');
-        this.guidebookModal = this.shadowDOM.getElementById('guidebook-modal');
+        this.disclaimerCancelBtn = this.shadowDOM.getElementById('disclaimer-cancel-btn');
 
         // Main Event listeners
         this.micBtn.addEventListener('click', () => this.toggleDictation());
@@ -1206,9 +1096,7 @@ class AIPatientSimulator extends HTMLElement {
             updatePAD();
         });
         
-        // Wizard tab listeners
-        this.tabWin.addEventListener('click', () => this.switchTab('win'));
-        this.tabMac.addEventListener('click', () => this.switchTab('mac'));
+        // Wizard tab listeners removed
         this.retryConnBtn.addEventListener('click', () => {
             this.setupWizard.style.display = 'none';
             this.connectWS();
@@ -1869,19 +1757,7 @@ class AIPatientSimulator extends HTMLElement {
         badge.innerHTML = text;
     }
 
-    switchTab(os) {
-        if (os === 'win') {
-            this.tabWin.classList.add('active');
-            this.tabMac.classList.remove('active');
-            this.instructionsWin.style.display = 'block';
-            this.instructionsMac.style.display = 'none';
-        } else {
-            this.tabWin.classList.remove('active');
-            this.tabMac.classList.add('active');
-            this.instructionsWin.style.display = 'none';
-            this.instructionsMac.style.display = 'block';
-        }
-    }
+
 
     closeConnections() {
         if (this.socket) {

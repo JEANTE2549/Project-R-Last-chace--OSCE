@@ -1,7 +1,13 @@
 import ollama
 import json
+import os
+from dotenv import load_dotenv
 
-ollama_client = ollama.AsyncClient(host='http://127.0.0.1:11434')
+load_dotenv()
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_EVAL_MODEL = os.getenv("OLLAMA_EVAL_MODEL", "llama3.1")
+
+ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)
 
 EVALUATOR_SYSTEM_PROMPT = """คุณคืออาจารย์แพทย์ผู้เชี่ยวชาญระดับสูงที่เข้มงวดและเที่ยงตรงอย่างยิ่ง ด้านทักษะการสื่อสารแพทย์-คนไข้ (Clinical Communication Skills)
 หน้าที่ของคุณคือประเมินการซักประวัติของนักศึกษาแพทย์จากบทสนทนา (Transcript) ที่กำหนดให้ 
@@ -51,7 +57,7 @@ async def evaluate_session(session_data: dict):
         user_prompt = f"--- ข้อมูลเคส ---\n{case_info}\n\n--- บทสนทนา ---\n{transcript}\n\nกรุณาประเมินผลการซักประวัตินี้อย่างเข้มงวด"
 
         response = await ollama_client.chat(
-            model='llama3.1', # Using Llama 3.1 for evaluation as it's more stable for long context
+            model=OLLAMA_EVAL_MODEL, # Using configured model for evaluation (default Llama 3.1)
             messages=[
                 {'role': 'system', 'content': EVALUATOR_SYSTEM_PROMPT},
                 {'role': 'user', 'content': user_prompt}
