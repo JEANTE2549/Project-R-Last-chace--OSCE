@@ -96,6 +96,14 @@
         const adminComponent = document.getElementById('my-admin');
         const statusDiv = document.getElementById('current-admin-status');
         
+        // Check if there is a 'backend' URL parameter (very useful for mobile testing with ngrok)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('backend')) {
+            localStorage.setItem('osce_server_url', urlParams.get('backend'));
+            // Optional: clean up the URL to not clutter the address bar
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         // Match current protocol-aware connection or fallback to local backend (http://127.0.0.1:8000) if hosted statically on a public site (like GitHub Pages)
         let serverUrl = localStorage.getItem('osce_server_url') || window.location.origin;
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !localStorage.getItem('osce_server_url')) {
