@@ -1300,7 +1300,7 @@ class AIPatientSimulator extends HTMLElement {
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`);
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             this.casesList = await response.json();
             
             this.casesLoading.style.display = 'none';
@@ -2147,7 +2147,7 @@ class AIPatientSimulator extends HTMLElement {
 
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/evaluate/${this.sessionId}`);
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/evaluate/${this.sessionId}`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             const data = await response.json();
 
             if (data.error) {
@@ -2179,7 +2179,7 @@ class AIPatientSimulator extends HTMLElement {
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
             const studentId = this.studentId || "guest_student";
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/history/${studentId}`);
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/history/${studentId}`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             const historyList = await response.json();
             
             this.historyLoading.style.display = 'none';
@@ -3048,7 +3048,7 @@ class AIPatientAdmin extends HTMLElement {
     async loadCases() {
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`);
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             this.casesList = await res.json();
             this.renderCasesList(this.casesList);
         } catch (err) {
@@ -3128,7 +3128,7 @@ class AIPatientAdmin extends HTMLElement {
             try {
                 // Fetch full data dynamically
                 const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-                const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`);
+                const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, { headers: { 'ngrok-skip-browser-warning': '1' } });
                 const all = await res.json();
                 const matched = all.find(item => item.id === caseId);
                 
@@ -3206,7 +3206,7 @@ class AIPatientAdmin extends HTMLElement {
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, {
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, { headers: { 'ngrok-skip-browser-warning': '1' },
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -3239,7 +3239,7 @@ class AIPatientAdmin extends HTMLElement {
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases/${caseId}`, {
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases/${caseId}`, { headers: { 'ngrok-skip-browser-warning': '1' },
                 method: 'DELETE'
             });
             const data = await res.json();
@@ -3258,7 +3258,7 @@ class AIPatientAdmin extends HTMLElement {
     async loadSessions() {
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions`);
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             this.sessionsList = await res.json();
             this.renderSessionsList(this.sessionsList);
         } catch (err) {
@@ -3325,7 +3325,7 @@ class AIPatientAdmin extends HTMLElement {
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions/${sessionId}`, {
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions/${sessionId}`, { headers: { 'ngrok-skip-browser-warning': '1' },
                 method: 'DELETE'
             });
             const data = await res.json();
@@ -3348,7 +3348,7 @@ class AIPatientAdmin extends HTMLElement {
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions/${sessionId}`);
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions/${sessionId}`, { headers: { 'ngrok-skip-browser-warning': '1' } });
             const data = await res.json();
             
             if (!data || data.status === 'error') {
