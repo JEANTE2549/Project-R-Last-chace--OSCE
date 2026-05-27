@@ -52,7 +52,7 @@
         }
     </style>
     <!-- Load the Embeddable JS Plugin SDK -->
-    <script src="/patient-simulator-widget.js"></script>
+    <script src="./patient-simulator-widget.js"></script>
 </head>
 <body>
     <div class="host-header">
@@ -95,7 +95,12 @@
     <script>
         const adminComponent = document.getElementById('my-admin');
         const statusDiv = document.getElementById('current-admin-status');
-        const serverUrl = window.location.origin;
+        
+        // Match current protocol-aware connection or fallback to local backend (http://127.0.0.1:8000) if hosted statically on a public site (like GitHub Pages)
+        let serverUrl = localStorage.getItem('osce_server_url') || window.location.origin;
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !localStorage.getItem('osce_server_url')) {
+            serverUrl = 'http://127.0.0.1:8000';
+        }
         adminComponent.setAttribute('server-url', serverUrl);
 
         function updateAdminUI(id, role) {
