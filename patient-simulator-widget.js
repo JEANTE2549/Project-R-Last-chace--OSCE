@@ -16,17 +16,7 @@ class AIPatientSimulator extends HTMLElement {
         // Dynamic GGUF Customization State
         this.selectedModel = "llama3.1:latest";
         this.temperature = 0.7;
-        this.customPrompt = `คุณคือคนไข้สมมติ อาการสำคัญ (Chief Complaint): {chief_complaint}
-
-ข้อมูลที่คุณ "จำได้" และสามารถตอบนักศึกษาได้ในขณะนี้:
-{revealed_info}
-
-กฎเหล็ก:
-1. ให้ตอบสั้นๆ เหมือนคนป่วย มีความกังวล ใช้ภาษาไทยแบบคนทั่วไป
-2. **ห้าม** บอกข้อมูลประวัติอื่นๆ ที่ไม่อยู่ในรายการ "ข้อมูลที่จำได้" ข้างต้นเด็ดขาด
-3. หากนักศึกษาถามถึงสิ่งที่ไม่ได้อยู่ในรายการข้างต้น ให้ตอบแบบเลี่ยงๆ หรือบอกว่า "จำไม่ได้" หรือ "ไม่แน่ใจ"
-4. ห้ามพูดชื่อโรค ออกมาเด็ดขาด
-5. ตอบทีละคำถาม ไม่ต้องร่ายยาวรวบยอด`;
+        this.customPrompt = "";
         
         // Dynamic Emotional States (PAD model)
         this.anger = 0;
@@ -49,13 +39,32 @@ class AIPatientSimulator extends HTMLElement {
         this.render();
         this.setupElements();
         this.checkAuthentication();
+        
+        // Initialize Persona Bank in localStorage if empty
+        if (!localStorage.getItem('osce_custom_personas')) {
+            localStorage.setItem('osce_custom_personas', JSON.stringify([]));
+        }
+        this.loadPersonaBank();
+        this.loadPreExamPersonaBank();
     }
 
     checkAuthentication() {
-        const token = sessionStorage.getItem('osce_student_token');
-        if (token === 'student_verified_token_xyz') {
+        this.studentId = this.getAttribute('student-id') || this.getAttribute('student_id');
+        this.studentName = this.getAttribute('student-name') || this.getAttribute('student_name') || "Guest Student";
+        this.studentToken = this.getAttribute('token');
+
+        if (!this.studentId) {
+            this.studentId = sessionStorage.getItem('osce_student_id') || localStorage.getItem('osce_student_id');
+            this.studentName = sessionStorage.getItem('osce_student_name') || localStorage.getItem('osce_student_name') || "Guest Student";
+            this.studentToken = sessionStorage.getItem('osce_student_token') || localStorage.getItem('osce_student_token');
+        }
+
+        if (this.studentId) {
+            sessionStorage.setItem('osce_student_id', this.studentId);
+            sessionStorage.setItem('osce_student_name', this.studentName);
+            if (this.studentToken) sessionStorage.setItem('osce_student_token', this.studentToken);
+
             this.authGateScreen.style.display = 'none';
-            // Normal routing
             if (this.mode === 'random') {
                 this.startSimulationWithCase(null);
             } else {
@@ -69,59 +78,12 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
-    async handleAuthSubmit() {
-        const passcode = this.authPasscodeInput.value.trim();
-        this.authErrorMsg.style.display = 'none';
-        
-        if (!passcode) {
-            this.authErrorMsg.innerText = "กรุณากรอกรหัสผ่าน!";
-            this.authErrorMsg.style.display = 'block';
-            return;
-        }
-        
-        try {
-            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/auth`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'student', passcode: passcode })
-            });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                sessionStorage.setItem('osce_student_token', data.token);
-                this.authPasscodeInput.value = '';
-                this.checkAuthentication();
-            } else {
-                this.authErrorMsg.innerText = data.message || "รหัสผ่านไม่ถูกต้อง!";
-                this.authErrorMsg.style.display = 'block';
-            }
-        } catch (err) {
-            console.error("Auth validation failed:", err);
-            // Local fallback validation if offline/error to help smooth presentation
-            if (passcode === 'student123') {
-                sessionStorage.setItem('osce_student_token', 'student_verified_token_xyz');
-                this.authPasscodeInput.value = '';
-                this.checkAuthentication();
-            } else {
-                this.authErrorMsg.innerText = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ตรวจรหัสผ่านได้!";
-                this.authErrorMsg.style.display = 'block';
-            }
-        }
-    }
-
-    lockSimulator() {
-        sessionStorage.removeItem('osce_student_token');
-        this.closeConnections();
-        this.checkAuthentication();
-    }
-
     disconnectedCallback() {
         this.closeConnections();
     }
 
     static get observedAttributes() {
-        return ['server-url', 'session-id', 'api-tier', 'mode'];
+        return ['server-url', 'session-id', 'api-tier', 'mode', 'student-id', 'student-name', 'token'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -135,6 +97,14 @@ class AIPatientSimulator extends HTMLElement {
             this.apiTier = newValue;
         } else if (name === 'mode') {
             this.mode = newValue;
+        } else if (name === 'student-id' || name === 'student_id') {
+            this.studentId = newValue;
+            this.checkAuthentication();
+        } else if (name === 'student-name' || name === 'student_name') {
+            this.studentName = newValue;
+        } else if (name === 'token') {
+            this.studentToken = newValue;
+            this.checkAuthentication();
         }
     }
 
@@ -149,6 +119,7 @@ class AIPatientSimulator extends HTMLElement {
                     margin: 40px auto;
                     padding: 20px;
                     background-color: #f4f7f6;
+                    color: #334155; /* Prevent white text leakage on light background */
                     border-radius: 15px;
                     box-sizing: border-box;
                     position: relative;
@@ -338,21 +309,7 @@ class AIPatientSimulator extends HTMLElement {
                 
                 /* Settings Button & Panel */
                 #settings-btn {
-                    position: absolute;
-                    right: 0px;
-                    top: 0px;
-                    background: transparent;
-                    color: #6c757d;
-                    border: none;
-                    padding: 5px;
-                    font-size: 24px;
-                    cursor: pointer;
-                    transition: transform 0.3s;
-                    border-radius: 50%;
-                }
-                #settings-btn:hover {
-                    transform: rotate(45deg);
-                    background-color: rgba(0, 0, 0, 0.05);
+                    display: none !important;
                 }
                 
                 #settings-drawer {
@@ -365,7 +322,7 @@ class AIPatientSimulator extends HTMLElement {
                     background: white;
                     border-radius: 15px;
                     box-shadow: -4px 0 10px rgba(0,0,0,0.1);
-                    z-index: 1000;
+                    z-index: 35000;
                     padding: 20px;
                     box-sizing: border-box;
                     overflow-y: auto;
@@ -497,6 +454,7 @@ class AIPatientSimulator extends HTMLElement {
                 }
                 .modal-content {
                     background-color: #fefefe;
+                    color: #1e293b; /* Prevent white text leakage */
                     margin: 5% auto;
                     padding: 30px;
                     border-radius: 15px;
@@ -521,6 +479,7 @@ class AIPatientSimulator extends HTMLElement {
                 .score-row {
                     display: flex;
                     justify-content: space-between;
+                    color: #1e293b; /* Prevent white text leakage */
                     margin-bottom: 10px;
                     padding: 10px;
                     background: #f8f9fa;
@@ -683,6 +642,40 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Pre-Encounter Entry Portal -->
             <div id="portal-screen" style="display: none;">
                 <div class="portal-title">🏥 แพลตฟอร์มจำลองคนไข้ซักประวัติ (OSCE)</div>
+                
+                <!-- Premium Model Inference Selector inside Portal -->
+                <div class="portal-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                    <label for="portal-tier-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        🤖 เลือกโมเดลประมวลผล (AI Model Select)
+                    </label>
+                    <select id="portal-tier-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600;">
+                        <option value="free">💻 รันในเครื่อง (Local Ollama) - รันฟรี / ปลอดภัย</option>
+                        <option value="paid">☁️ คลาวด์อัจฉริยะ (Typhoon AI) - ฉลาดสูงสุด / มีลิมิต</option>
+                    </select>
+                    <span style="font-size: 11px; color: #64748b; display: block; margin-top: 6px; line-height: 1.4;">
+                        *หมายเหตุ: คลาวด์ Typhoon มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
+                    </span>
+                </div>
+
+                <!-- 🎭 Patient Persona Bank Card directly in student Portal screen -->
+                <div class="portal-card" id="persona-bank-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                    <label for="persona-preset-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        🎭 คลังบุคลิกคนไข้และอารมณ์ (Patient Persona Bank)
+                    </label>
+                    <select id="persona-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
+                        <!-- Options populated dynamically by JS -->
+                    </select>
+                    <div id="persona-summary-badge" style="font-size: 12px; color: #475569; background-color: #f1f5f9; padding: 8px 12px; border-radius: 8px; line-height: 1.4; margin-bottom: 10px;">
+                        กำลังโหลดข้อมูลบุคลิก...
+                    </div>
+                    <button id="customize-persona-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                        ⚙️ ปรับแต่งคุณสมบัติบุคลิกนี้...
+                    </button>
+                    <button id="delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
+                        🗑️ ลบบุคลิกภาพนี้ออกจากคลัง
+                    </button>
+                </div>
+
                 <div class="portal-btns-container">
                     <button id="blind-osce-btn" class="portal-btn" style="background-color: #0d6efd;">
                         🎲 ซักประวัติสุ่มเคส (Blind Case)
@@ -690,6 +683,172 @@ class AIPatientSimulator extends HTMLElement {
                     <button id="select-syndrome-btn" class="portal-btn" style="background-color: #6c757d;">
                         🩺 เลือกเคสโรคจำลอง (Selective Category)
                     </button>
+                    <button id="view-history-btn" class="portal-btn" style="background-color: #198754;">
+                        📝 ประวัติการฝึกฝนของฉัน (My History)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Student History Screen -->
+            <div id="history-screen" style="display: none; padding: 10px;">
+                <div class="cases-header">
+                    <h3 style="margin: 0; color: #333;">📝 ประวัติการสอบและการฝึกฝนของคุณ</h3>
+                    <button id="history-back-btn" class="back-btn">ย้อนกลับ</button>
+                </div>
+                <div id="history-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
+                    ⏳ กำลังประมวลผลดึงประวัติการซักของคุณจากระบบ...
+                </div>
+                <div id="history-list-container" class="cards-grid" style="grid-template-columns: 1fr; max-height: 400px; overflow-y: auto;">
+                    <!-- Historical rows will be loaded dynamically here -->
+                </div>
+            </div>
+
+            <!-- Pre-Exam Configuration Gate Modal -->
+            <div id="pre-exam-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 29000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
+                <div class="auth-card" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(30, 41, 59, 0.95); max-width: 400px; text-align: left;">
+                    <div class="auth-icon" style="font-size: 48px; margin-bottom: 12px; text-align: center; display: block;">🩺</div>
+                    <div class="auth-title" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="pre-exam-preset-select" style="font-weight: bold; color: #cbd5e1; font-size: 14px; display: block; margin-bottom: 8px;">
+                            🎭 เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:
+                        </label>
+                        <select id="pre-exam-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
+                            <!-- Options populated dynamically by JS -->
+                        </select>
+                        <div id="pre-exam-summary-badge" style="font-size: 12px; color: #e2e8f0; background-color: #334155; padding: 10px 14px; border-radius: 8px; line-height: 1.4; border: 1px solid #475569; margin-bottom: 12px;">
+                            กำลังโหลดรายละเอียดบุคลิกภาพ...
+                        </div>
+                        <button id="pre-exam-customize-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                            ⚙️ ปรับแต่งบุคลิกภาพก่อนสอบ...
+                        </button>
+                        <button id="pre-exam-delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
+                            🗑️ ลบบุคลิกภาพนี้ออกจากคลัง
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button id="pre-exam-cancel-btn" style="background: #475569; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center;">ย้อนกลับ</button>
+                        <button id="pre-exam-start-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">เริ่มสอบซักประวัติ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GGUF Parameter settings-drawer -->
+            <div id="settings-drawer">
+                <div class="drawer-header">
+                    <h3 style="margin: 0; color: #333;">⚙️ ตั้งค่าระดับอารมณ์คนไข้จำลอง</h3>
+                    <span id="close-drawer-btn" style="font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
+                </div>
+                
+                <!-- Hidden selectors to keep existing JS code fully functional without null pointer exceptions -->
+                <div class="form-group" style="display: none;">
+                    <label for="model-select">เลือกโมเดล (Ollama Model)</label>
+                    <select id="model-select">
+                        <option value="llama3.1:latest">Llama 3.1 8B (แนะนำ)</option>
+                        <option value="deepseek-r1:1.5b">DeepSeek R1 1.5B (Intent)</option>
+                        <option value="llama3:latest">Llama 3 8B</option>
+                        <option value="custom" selected>ระบุโมเดลอื่น ๆ...</option>
+                    </select>
+                    <input type="text" id="model-custom" value="llama3.1:latest" style="margin-top: 8px; display: none;">
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label for="tier-select">🤖 เลือกโมเดลประมวลผล (AI Model Select)</label>
+                    <select id="tier-select">
+                        <option value="free">💻 รันในเครื่อง (Local Ollama)</option>
+                        <option value="paid">☁️ คลาวด์อัจฉริยะ (Typhoon AI)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: none;">
+                    <label for="temp-slider">อุณหภูมิ (Temperature) <span id="temp-val" class="slider-val">0.7</span></label>
+                    <input type="range" id="temp-slider" min="0.1" max="1.5" step="0.1" value="0.7">
+                </div>
+
+                <!-- Dynamic Emotional Persona Settings Drawer Pane -->
+                <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
+                    <label for="preset-select">🎭 เลือกแม่แบบบุคลิก (Preset)</label>
+                    <select id="preset-select">
+                        <option value="cooperative">ให้ความร่วมมือดี / ใจเย็น (Cooperative)</option>
+                        <option value="normal">ปกติ (Normal)</option>
+                        <option value="anxious">วิตกกังวล / ตื่นตระหนก (Anxious)</option>
+                        <option value="severe_pain">เจ็บปวดรุนแรง (Severe Pain Preset)</option>
+                        <option value="combative">โกรธ / ก้าวร้าวเหวี่ยงหมอ (Combative)</option>
+                        <option value="depressed">ซึมเศร้า / ท้อแท้เหนื่อยล้า (Depressed)</option>
+                        <option value="custom">ปรับแต่งอารมณ์เอง...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="emotion-sliders-group">
+                    <label>🔥 ระดับอารมณ์ความรู้สึกคนไข้</label>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #555;">ความโกรธ/ก้าวร้าว: <span id="anger-val" class="slider-val">0%</span></span>
+                        <input type="range" id="anger-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #555;">ความเศร้า/อ่อนแอ: <span id="sadness-val" class="slider-val">0%</span></span>
+                        <input type="range" id="sadness-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
+                    </div>
+                    
+                    <div style="margin-bottom: 8px;">
+                        <span style="font-size: 13px; color: #555;">ความสุข/สงบนิ่ง: <span id="happiness-val" class="slider-val">100%</span></span>
+                        <input type="range" id="happiness-slider" min="0" max="100" step="5" value="100" style="width: 100%;">
+                    </div>
+                    
+                    <div style="background: #e9ecef; padding: 8px; border-radius: 6px; font-size: 11px; color: #495057; margin-top: 10px;">
+                        ℹ️ <b>PAD Model Vectors:</b> 
+                        P: <span id="pad-p" style="font-weight: bold; color: #0d6efd;">1.00</span> | 
+                        A: <span id="pad-a" style="font-weight: bold; color: #dc3545;">-0.50</span> | 
+                        D: <span id="pad-d" style="font-weight: bold; color: #198754;">0.50</span>
+                    </div>
+                </div>
+
+                <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px;">
+                    <label for="prompt-textarea">🧬 คำสั่งพฤติกรรมและอาการคนไข้เพิ่มเติม (Additional Instructions)</label>
+                    <textarea id="prompt-textarea" placeholder="ระบุพฤติกรรมเสริม เช่น 'คนไข้ปากเบี้ยวเล็กน้อยเวลากล่าว', 'อ่อนแรงครึ่งซีก', หรือ 'มีความ sensitive ร้องไห้ง่ายมาก' เพื่อท้าทายทักษะการซักประวัติ"></textarea>
+                    <span style="font-size: 11px; color: #888;">*หมายเหตุ: คำสั่งนี้จะส่งไปช่วยเสริมพฤติกรรมการแสดงออกของคนไข้สมมติ โดยไม่รบกวนบทยืนยันอาการหลักของเคสแพทย์จำลอง*</span>
+                </div>
+
+                <!-- 💾 Save to Bank Box -->
+                <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #334155;">
+                        <input type="checkbox" id="save-to-bank-checkbox"> 💾 บันทึกเก็บลงในคลังบุคลิกภาพ (Save to Bank)
+                    </label>
+                    
+                    <div id="bank-input-group" style="display: none; margin-top: 10px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <label for="bank-persona-name" style="font-size: 13px; font-weight: bold; margin-bottom: 6px; display: block; color: #334155;">ชื่อบุคลิกภาพจำลองที่ต้องการบันทึก:</label>
+                        <input type="text" id="bank-persona-name" class="form-control" placeholder="เช่น หงุดหงิดเจ็บแผลรุนแรง..." style="margin-bottom: 10px; background-color: white; border: 1px solid #cbd5e1; color: #334155; width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 6px;">
+                        
+                        <div id="bank-replace-section" style="display: none; margin-top: 10px;">
+                            <span style="font-size: 12px; color: #e11d48; font-weight: bold; display: block; margin-bottom: 6px;">⚠️ คลังเต็มแล้ว (จำกัดสูงสุด 5 บุคลิก) กรุณาเลือกบุคลิกที่จะถูกเขียนทับแทนที่:</span>
+                            <div id="bank-replace-radios" style="display: flex; flex-direction: column; gap: 6px;">
+                                <!-- Dynamically generated radio buttons -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 15px;">
+                    <button id="save-settings-btn" style="background-color: #198754; width: 100%;">บันทึกการปรับจูน</button>
+                </div>
+            </div>
+
+            <!-- Disclaimer Warning Modal -->
+            <div id="disclaimer-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
+                <div class="auth-card" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(30, 41, 59, 0.95); max-width: 360px;">
+                     <div class="auth-icon" style="font-size: 48px; margin-bottom: 12px;">💎</div>
+                    <div class="auth-title" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 18px;">ข้อกำหนดการใช้ Cloud AI (Typhoon)</div>
+                    <div class="auth-desc" style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
+                        คุณกำลังสลับไปเปิดใช้งานโมเดลภาษาไทยอัจฉริยะในคลาวด์ ซึ่งมีข้อจำกัดด้านโควต้าทรัพยากร:<br>
+                        • จำกัดคำถามสูงสุด <b>30 ข้อความต่อหนึ่งรอบสอบ</b><br>
+                        • จำกัดคำถามสูงสุด <b>50 ข้อความต่อคนต่อวัน</b><br>
+                        <small style="color: #fbbf24; display: block; margin-top: 8px;">*หากใช้เต็มโควต้าระบบจะปรับสลับเป็นโมเดลโลคอล Ollama รันฟรีอัตโนมัติ</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="disclaimer-cancel-btn" style="background: #475569; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px;">กลับไปใช้โลคอล</button>
+                        <button id="disclaimer-accept-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">ยอมรับโควต้า</button>
+                    </div>
                 </div>
             </div>
 
@@ -707,97 +866,21 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
             </div>
             
+            <button id="settings-btn" title="ตั้งค่าอาการและอารมณ์คนไข้จำลอง" style="display: block;">⚙️</button>
             <div class="widget-container" style="display: none;">
-                <button id="lock-simulator-btn" class="lock-btn" title="ออกจากระบบ / ล็อคแผงควบคุม">🔒</button>
-                <button id="settings-btn" title="GGUF Local AI Config">⚙️</button>
                 <h2>🩺 AI Patient Simulator</h2>
                 <div id="chat-box"></div>
                 <div class="btn-container">
+                    <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">🏠 ยกเลิกและกลับหน้าแรก</button>
                     <button id="mic-btn">🎤 คลิกเพื่อพูด</button>
                     <button id="end-btn" style="background-color: #6c757d;">🏁 จบการซักประวัติ</button>
                     <button id="new-btn" style="background-color: #198754; display: none;">🆕 เคสใหม่</button>
                     <button id="view-eval-btn" style="background-color: #ffc107; color: #000; display: none;">📊 ดูผลการประเมิน</button>
+                    <button id="portal-btn" style="background-color: #0d6efd; display: none;">🏠 กลับหน้าแรก</button>
                     <span id="status">กำลังเชื่อมต่อ...</span>
                 </div>
 
-                <!-- GGUF Parameter settings-drawer -->
-                <div id="settings-drawer">
-                    <div class="drawer-header">
-                        <h3 style="margin: 0; color: #333;">⚙️ ปรับจูนบอร์ด GGUF (Local AI)</h3>
-                        <span id="close-drawer-btn" style="font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="model-select">เลือกโมเดล (Ollama Model)</label>
-                        <select id="model-select">
-                            <option value="llama3.1:latest">Llama 3.1 8B (แนะนำ)</option>
-                            <option value="deepseek-r1:1.5b">DeepSeek R1 1.5B (Intent)</option>
-                            <option value="llama3:latest">Llama 3 8B</option>
-                            <option value="custom">ระบุโมเดลอื่น ๆ...</option>
-                        </select>
-                        <input type="text" id="model-custom" placeholder="ระบุชื่อโมเดล เช่น qwen2.5:7b" style="margin-top: 8px; display: none;">
-                    </div>
-                    <!-- Multi-Tier Plan Selector -->
-                    <div class="form-group" style="border-top: 1px solid #eee; padding-top: 8px; margin-top: 8px;">
-                        <label for="tier-select">💎 ระดับความฉลาด (AI Inference Tier)</label>
-                        <select id="tier-select">
-                            <option value="free">แถมฟรี: รันโลคอล (Local Ollama CPU/GPU)</option>
-                            <option value="paid">จ่ายเงิน: คลาวด์อัจฉริยะ (Typhoon / GPT-4o API)</option>
-                        </select>
-                        <span style="font-size: 11px; color: #888;">หมายเหตุ: แผนคลาวด์รองรับการตั้งค่า TYPHOON_API_KEY (แนะนำสำหรับภาษาไทย) หรือ OPENAI_API_KEY ในไฟล์ .env ของเซิร์ฟเวอร์หลัก</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="temp-slider">อุณหภูมิ (Temperature) <span id="temp-val" class="slider-val">0.7</span></label>
-                        <input type="range" id="temp-slider" min="0.1" max="1.5" step="0.1" value="0.7">
-                    </div>
 
-                    <!-- Dynamic Emotional Persona Settings Drawer Pane -->
-                    <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
-                        <label for="preset-select">🎭 เลือกแม่แบบบุคลิก (Preset)</label>
-                        <select id="preset-select">
-                            <option value="cooperative">ให้ความร่วมมือดี / ใจเย็น (Cooperative)</option>
-                            <option value="normal">ปกติ (Normal)</option>
-                            <option value="anxious">วิตกกังวล / ตื่นตระหนก (Anxious)</option>
-                            <option value="combative">โกรธ / ก้าวร้าวเหวี่ยงหมอ (Combative)</option>
-                            <option value="depressed">ซึมเศร้า / ท้อแท้เหนื่อยล้า (Depressed)</option>
-                            <option value="custom">ปรับแต่งอารมณ์เอง...</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group" id="emotion-sliders-group">
-                        <label>🔥 ระดับอารมณ์ความรู้สึกคนไข้</label>
-                        
-                        <div style="margin-bottom: 8px;">
-                            <span style="font-size: 13px; color: #555;">ความโกรธ/ก้าวร้าว: <span id="anger-val" class="slider-val">0%</span></span>
-                            <input type="range" id="anger-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
-                        </div>
-                        
-                        <div style="margin-bottom: 8px;">
-                            <span style="font-size: 13px; color: #555;">ความเศร้า/อ่อนแอ: <span id="sadness-val" class="slider-val">0%</span></span>
-                            <input type="range" id="sadness-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
-                        </div>
-                        
-                        <div style="margin-bottom: 8px;">
-                            <span style="font-size: 13px; color: #555;">ความสุข/สงบนิ่ง: <span id="happiness-val" class="slider-val">100%</span></span>
-                            <input type="range" id="happiness-slider" min="0" max="100" step="5" value="100" style="width: 100%;">
-                        </div>
-                        
-                        <div style="background: #e9ecef; padding: 8px; border-radius: 6px; font-size: 11px; color: #495057; margin-top: 10px;">
-                            ℹ️ <b>PAD Model Vectors:</b> 
-                            P: <span id="pad-p" style="font-weight: bold; color: #0d6efd;">1.00</span> | 
-                            A: <span id="pad-a" style="font-weight: bold; color: #dc3545;">-0.50</span> | 
-                            D: <span id="pad-d" style="font-weight: bold; color: #198754;">0.50</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px;">
-                        <label for="prompt-textarea">System Prompt (บทยืนยันอาการคนไข้)</label>
-                        <textarea id="prompt-textarea" placeholder="เขียนบทยืนยัน โดยมีคำว่า {revealed_info} เพื่อดึงอาการจาก RAG"></textarea>
-                        <span style="font-size: 11px; color: #888;">หมายเหตุ: ใน Prompt ต้องมี {revealed_info} เพื่อให้ระบบแทนที่ข้อมูลเวชระเบียนที่ซักได้</span>
-                    </div>
-                    <div style="text-align: center; margin-top: 15px;">
-                        <button id="save-settings-btn" style="background-color: #198754; width: 100%;">บันทึกการปรับจูน</button>
-                    </div>
-                </div>
 
                 <!-- Local CORS Connection Setup Wizard -->
                 <div id="setup-wizard">
@@ -856,18 +939,17 @@ class AIPatientSimulator extends HTMLElement {
             </div>
             <!-- Access passcode gateway screen -->
             <div id="auth-gate-screen" class="auth-overlay" style="display: flex;">
-                <div class="auth-card">
-                    <div class="auth-icon">🏥</div>
-                    <div class="auth-title">เข้าใช้งานในบทบาท "นักศึกษา"</div>
-                    <div class="auth-desc">กรุณากรอกรหัสผ่านเพื่อปลดล็อคเครื่องมือซักประวัติแพทย์ (OSCE)<br><small style="color: #94a3b8;">(รหัสผ่านแนะนำ: student123)</small></div>
-                    <input type="password" id="auth-passcode-input" class="form-control" placeholder="ป้อนรหัสผ่านซักประวัติ..." style="text-align: center; margin-bottom: 15px;">
-                    <button id="auth-submit-btn" class="auth-submit-btn">🔓 ยืนยันสิทธิ์ใช้งาน</button>
-                    <div id="auth-error-msg" class="auth-error">รหัสผ่านสำหรับสิทธิ์ใช้งานไม่ถูกต้อง!</div>
+                <div class="auth-card" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(15, 23, 42, 0.9);">
+                    <div class="auth-icon" style="filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.4));">🏥</div>
+                    <div class="auth-title" style="background: linear-gradient(135deg, #f87171, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 12px;">กรุณาเข้าสู่ระบบผ่านเว็บไซต์หลัก</div>
+                    <div class="auth-desc" style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                        ระบบตรวจไม่พบสิทธิ์และรหัสประจำตัวนักศึกษาของคุณ<br>
+                        กรุณาล็อกอินเข้าสู่เว็บไซต์หลักของสถาบันเพื่อเรียกใช้งานเครื่องมือซักประวัติแพทย์จำลอง (OSCE)
+                    </div>
                 </div>
             </div>
         `;
     }
-
     setupElements() {
         this.chatBox = this.shadowDOM.getElementById('chat-box');
         this.status = this.shadowDOM.getElementById('status');
@@ -875,17 +957,17 @@ class AIPatientSimulator extends HTMLElement {
         this.endBtn = this.shadowDOM.getElementById('end-btn');
         this.newBtn = this.shadowDOM.getElementById('new-btn');
         this.viewEvalBtn = this.shadowDOM.getElementById('view-eval-btn');
+        this.portalBtn = this.shadowDOM.getElementById('portal-btn');
         this.evalModal = this.shadowDOM.getElementById('eval-modal');
         this.closeBtn = this.shadowDOM.querySelector('.close');
         this.evalResults = this.shadowDOM.getElementById('eval-results');
         
         // Auth elements
         this.authGateScreen = this.shadowDOM.getElementById('auth-gate-screen');
-        this.authPasscodeInput = this.shadowDOM.getElementById('auth-passcode-input');
-        this.authSubmitBtn = this.shadowDOM.getElementById('auth-submit-btn');
-        this.authErrorMsg = this.shadowDOM.getElementById('auth-error-msg');
-        this.lockSimulatorBtn = this.shadowDOM.getElementById('lock-simulator-btn');
+        
+        // Models dropdowns
         this.tierSelect = this.shadowDOM.getElementById('tier-select');
+        this.portalTierSelect = this.shadowDOM.getElementById('portal-tier-select');
         
         // Settings elements
         this.settingsBtn = this.shadowDOM.getElementById('settings-btn');
@@ -928,19 +1010,50 @@ class AIPatientSimulator extends HTMLElement {
         this.backToPortalBtn = this.shadowDOM.getElementById('back-to-portal-btn');
         this.widgetContainer = this.shadowDOM.querySelector('.widget-container');
 
+        // History elements
+        this.viewHistoryBtn = this.shadowDOM.getElementById('view-history-btn');
+        this.historyScreen = this.shadowDOM.getElementById('history-screen');
+        this.historyBackBtn = this.shadowDOM.getElementById('history-back-btn');
+        this.historyListContainer = this.shadowDOM.getElementById('history-list-container');
+        this.historyLoading = this.shadowDOM.getElementById('history-loading');
+        
+        // Disclaimer elements
+        this.disclaimerModal = this.shadowDOM.getElementById('disclaimer-modal');
+        this.disclaimerAcceptBtn = this.shadowDOM.getElementById('disclaimer-accept-btn');
+        this.disclaimerCancelBtn = this.shadowDOM.getElementById('disclaimer-cancel-btn');
+
+        // NEW: Phase 4.2 Elements
+        this.cancelPortalBtn = this.shadowDOM.getElementById('cancel-portal-btn');
+        this.portalPresetSelect = this.shadowDOM.getElementById('persona-preset-select');
+        this.customizePersonaBtn = this.shadowDOM.getElementById('customize-persona-btn');
+        this.saveToBankCheckbox = this.shadowDOM.getElementById('save-to-bank-checkbox');
+        this.bankInputGroup = this.shadowDOM.getElementById('bank-input-group');
+        this.bankPersonaName = this.shadowDOM.getElementById('bank-persona-name');
+        this.bankReplaceSection = this.shadowDOM.getElementById('bank-replace-section');
+        this.bankReplaceRadios = this.shadowDOM.getElementById('bank-replace-radios');
+
+        // Pre-Exam Modal elements
+        this.preExamModal = this.shadowDOM.getElementById('pre-exam-modal');
+        this.preExamPresetSelect = this.shadowDOM.getElementById('pre-exam-preset-select');
+        this.preExamSummaryBadge = this.shadowDOM.getElementById('pre-exam-summary-badge');
+        this.preExamCustomizeBtn = this.shadowDOM.getElementById('pre-exam-customize-btn');
+        this.preExamCancelBtn = this.shadowDOM.getElementById('pre-exam-cancel-btn');
+        this.preExamStartBtn = this.shadowDOM.getElementById('pre-exam-start-btn');
+        this.deletePersonaBtn = this.shadowDOM.getElementById('delete-persona-btn');
+        this.preExamDeletePersonaBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
+
         // Main Event listeners
         this.micBtn.addEventListener('click', () => this.toggleDictation());
+        this.micBtn.style.backgroundColor = "#0d6efd"; // Standard Blue Mic Reset
+        this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
         this.endBtn.addEventListener('click', () => this.endSimulation());
         this.newBtn.addEventListener('click', () => this.newSimulation());
         this.viewEvalBtn.addEventListener('click', () => this.showEvaluation());
-        this.closeBtn.addEventListener('click', () => this.closeModal());
-        
-        // Auth Event listeners
-        this.authSubmitBtn.addEventListener('click', () => this.handleAuthSubmit());
-        this.authPasscodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.handleAuthSubmit();
+        this.portalBtn.addEventListener('click', () => {
+            this.closeConnections();
+            this.showScreen('portal');
         });
-        this.lockSimulatorBtn.addEventListener('click', () => this.lockSimulator());
+        this.closeBtn.addEventListener('click', () => this.closeModal());
         
         // Drawer toggle listeners
         this.settingsBtn.addEventListener('click', () => this.openDrawer());
@@ -952,6 +1065,32 @@ class AIPatientSimulator extends HTMLElement {
         this.selectSyndromeBtn.addEventListener('click', () => this.loadSyndromesList());
         this.backToPortalBtn.addEventListener('click', () => this.showScreen('portal'));
         
+        // Student History listeners
+        this.viewHistoryBtn.addEventListener('click', () => this.loadStudentHistory());
+        this.historyBackBtn.addEventListener('click', () => this.showScreen('portal'));
+        
+        // NEW: Phase 4.2 Event listeners
+        this.cancelPortalBtn.addEventListener('click', () => {
+            this.closeConnections();
+            this.showScreen('portal');
+        });
+        this.portalPresetSelect.addEventListener('change', () => this.handlePersonaChange());
+        this.customizePersonaBtn.addEventListener('click', () => this.openDrawer());
+        this.saveToBankCheckbox.addEventListener('change', (e) => this.toggleBankInputGroup(e.target.checked));
+
+        // Pre-Exam Modal listeners
+        this.preExamPresetSelect.addEventListener('change', () => this.handlePreExamPersonaChange());
+        this.preExamCustomizeBtn.addEventListener('click', () => this.openDrawer());
+        this.preExamCancelBtn.addEventListener('click', () => {
+            this.preExamModal.style.display = 'none';
+        });
+        this.preExamStartBtn.addEventListener('click', () => {
+            this.preExamModal.style.display = 'none';
+            this.launchSimulationRoom(this.selectedCaseId);
+        });
+        this.deletePersonaBtn.addEventListener('click', () => this.deleteSelectedPersona());
+        this.preExamDeletePersonaBtn.addEventListener('click', () => this.deleteSelectedPersona());
+
         // Update temp text value
         this.tempSlider.addEventListener('input', (e) => {
             this.tempVal.innerText = e.target.value;
@@ -1011,10 +1150,41 @@ class AIPatientSimulator extends HTMLElement {
             });
         });
 
-        // Initialize default tier selector UI
+        // Initialize default tier selectors UI & listeners
+        const handleTierChange = (newVal, selectElement) => {
+            if (newVal === 'paid') {
+                this.disclaimerModal.style.display = 'flex';
+                this.pendingSelect = selectElement;
+            } else {
+                this.apiTier = 'free';
+                this.tierSelect.value = 'free';
+                this.portalTierSelect.value = 'free';
+            }
+        };
+
+        this.portalTierSelect.value = this.apiTier;
         this.tierSelect.value = this.apiTier;
+
+        this.portalTierSelect.addEventListener('change', (e) => {
+            handleTierChange(e.target.value, this.portalTierSelect);
+        });
+
         this.tierSelect.addEventListener('change', (e) => {
-            this.apiTier = e.target.value;
+            handleTierChange(e.target.value, this.tierSelect);
+        });
+
+        this.disclaimerAcceptBtn.addEventListener('click', () => {
+            this.apiTier = 'paid';
+            this.tierSelect.value = 'paid';
+            this.portalTierSelect.value = 'paid';
+            this.disclaimerModal.style.display = 'none';
+        });
+
+        this.disclaimerCancelBtn.addEventListener('click', () => {
+            this.tierSelect.value = 'free';
+            this.portalTierSelect.value = 'free';
+            this.apiTier = 'free';
+            this.disclaimerModal.style.display = 'none';
         });
 
         // Initialize Prompt text area & sliders value
@@ -1026,13 +1196,20 @@ class AIPatientSimulator extends HTMLElement {
         this.portalScreen.style.display = 'none';
         this.casesGridScreen.style.display = 'none';
         this.widgetContainer.style.display = 'none';
+        this.historyScreen.style.display = 'none';
         
         if (screenName === 'portal') {
             this.portalScreen.style.display = 'block';
+            this.settingsBtn.style.display = 'block';
         } else if (screenName === 'selective') {
             this.casesGridScreen.style.display = 'block';
+            this.settingsBtn.style.display = 'block';
         } else if (screenName === 'chat') {
             this.widgetContainer.style.display = 'block';
+            this.settingsBtn.style.display = 'none'; // strictly hide settings cog in exam room
+        } else if (screenName === 'history') {
+            this.historyScreen.style.display = 'block';
+            this.settingsBtn.style.display = 'none';
         }
     }
 
@@ -1086,6 +1263,49 @@ class AIPatientSimulator extends HTMLElement {
 
     startSimulationWithCase(caseId) {
         this.selectedCaseId = caseId;
+        
+        // Synchronize and load pre-exam persona dropdown and details
+        this.loadPreExamPersonaBank();
+        this.preExamPresetSelect.value = this.portalPresetSelect.value;
+        this.updatePreExamPersonaSummary();
+        
+        // Show Pre-Exam Modal
+        this.preExamModal.style.display = 'flex';
+    }
+
+    launchSimulationRoom(caseId) {
+        this.selectedCaseId = caseId;
+        
+        // Fully reset session states
+        this.sessionId = "session_" + Math.random().toString(36).substring(7);
+        this.chatBox.innerHTML = "";
+        
+        // Reset voice speech parameters
+        this.currentPatientMsgDiv = null;
+        this.ttsQueue = [];
+        this.isSpeaking = false;
+        window.speechSynthesis.cancel();
+        
+        // Ensure settings drawer is closed/hidden to secure exam UI
+        this.closeDrawer();
+        
+        // Restore buttons state to active encounter
+        this.micBtn.style.display = 'inline-block';
+        this.micBtn.disabled = false;
+        this.micBtn.style.backgroundColor = "#0d6efd";
+        this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
+        
+        // Show cancel button at 0 turns (simulation start)
+        if (this.cancelPortalBtn) {
+            this.cancelPortalBtn.style.display = 'inline-block';
+        }
+        
+        this.endBtn.style.display = 'inline-block';
+        
+        this.newBtn.style.display = 'none';
+        this.viewEvalBtn.style.display = 'none';
+        if (this.portalBtn) this.portalBtn.style.display = 'none';
+        
         this.showScreen('chat');
         this.connectWS();
     }
@@ -1134,6 +1354,9 @@ class AIPatientSimulator extends HTMLElement {
             case 'anxious':
                 anger = 10; sadness = 70; happiness = 10;
                 break;
+            case 'severe_pain':
+                anger = 25; sadness = 75; happiness = 0;
+                break;
             case 'combative':
                 anger = 90; sadness = 10; happiness = 0;
                 break;
@@ -1166,6 +1389,54 @@ class AIPatientSimulator extends HTMLElement {
         this.customPrompt = this.promptTextarea.value;
         this.calculatePAD();
         
+        // 💾 Handle Persona Bank Saving Logic (Phase 4.2)
+        if (this.saveToBankCheckbox.checked) {
+            const nameInput = this.bankPersonaName.value.trim();
+            if (!nameInput) {
+                alert("กรุณาระบุชื่อบุคลิกภาพจำลองที่ต้องการบันทึกด้วย!");
+                return;
+            }
+            
+            let list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            
+            const newPersona = {
+                id: "persona_" + Date.now(),
+                name: nameInput,
+                anger: this.anger,
+                sadness: this.sadness,
+                happiness: this.happiness,
+                additional_instructions: this.promptTextarea.value
+            };
+            
+            if (list.length < 5) {
+                list.push(newPersona);
+                localStorage.setItem('osce_custom_personas', JSON.stringify(list));
+                alert("บันทึกบุคลิกคนไข้ลงคลังสำเร็จ!");
+            } else {
+                // Find which existing persona to replace/overwrite
+                const selectedRadio = this.shadowDOM.querySelector('input[name="replace-persona"]:checked');
+                if (!selectedRadio) {
+                    alert("คลังเต็มแล้ว! กรุณาเลือกบุคลิกเดิมที่จะให้เขียนทับแทนที่");
+                    return;
+                }
+                const targetId = selectedRadio.value;
+                const idx = list.findIndex(p => p.id === targetId);
+                if (idx !== -1) {
+                    newPersona.id = targetId; // keep original ID
+                    list[idx] = newPersona;
+                    localStorage.setItem('osce_custom_personas', JSON.stringify(list));
+                    alert("เขียนทับทดแทนบุคลิกเดิมเสร็จสิ้น!");
+                }
+            }
+            
+            this.loadPersonaBank();
+            this.loadPreExamPersonaBank();
+            this.portalPresetSelect.value = "custom_" + newPersona.id;
+            this.preExamPresetSelect.value = "custom_" + newPersona.id;
+            this.updatePersonaSummary();
+            this.updatePreExamPersonaSummary();
+        }
+        
         this.closeDrawer();
         
         // Flash a status message briefly
@@ -1176,6 +1447,321 @@ class AIPatientSimulator extends HTMLElement {
             this.status.innerText = originalStatus;
             this.status.style.color = "";
         }, 1500);
+    }
+
+    // --- 🎭 Dynamic Persona Bank & LocalStorage Handlers (Phase 4.2) ---
+    loadPersonaBank() {
+        const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+        
+        let html = `
+            <option value="cooperative">💻 แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="anxious">😰 คนไข้วิตกกังวลสูง (Anxious Preset)</option>
+            <option value="severe_pain">😫 คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
+            <option value="combative">😡 คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+        `;
+        
+        if (list.length > 0) {
+            html += `<optgroup label="💾 บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
+            list.forEach(p => {
+                html += `<option value="custom_${p.id}">👤 ${p.name}</option>`;
+            });
+            html += `</optgroup>`;
+        }
+        
+        html += `
+            <option value="create_new">➕ ปรับแต่งบุคลิกใหม่...</option>
+        `;
+        
+        this.portalPresetSelect.innerHTML = html;
+        this.updatePersonaSummary();
+    }
+
+    handlePersonaChange() {
+        const val = this.portalPresetSelect.value;
+        if (val === 'create_new') {
+            // Reset to cooperative defaults for drawer setup
+            this.presetSelect.value = 'cooperative';
+            this.applyPreset('cooperative');
+            this.promptTextarea.value = "";
+            
+            // Clean Bank Saving drawers controls
+            this.saveToBankCheckbox.checked = false;
+            this.bankInputGroup.style.display = 'none';
+            this.bankPersonaName.value = "";
+            
+            // Revert portal selector state to avoid visual glitches
+            this.portalPresetSelect.value = 'cooperative';
+            this.updatePersonaSummary();
+            
+            this.openDrawer();
+        } else if (val.startsWith('custom_')) {
+            const id = val.replace('custom_', '');
+            const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            const p = list.find(item => item.id === id);
+            if (p) {
+                // Sync simulation active state
+                this.anger = p.anger;
+                this.sadness = p.sadness;
+                this.happiness = p.happiness;
+                this.customPrompt = p.additional_instructions || "";
+                
+                // Sync drawer sliders UI
+                this.angerSlider.value = p.anger;
+                this.angerVal.innerText = p.anger + "%";
+                this.sadnessSlider.value = p.sadness;
+                this.sadnessVal.innerText = p.sadness + "%";
+                this.happinessSlider.value = p.happiness;
+                this.happinessVal.innerText = p.happiness + "%";
+                this.promptTextarea.value = p.additional_instructions || "";
+                this.presetSelect.value = 'custom';
+                
+                this.calculatePAD();
+                this.updatePersonaSummary();
+
+                // Sync Pre-Exam select
+                if (this.preExamPresetSelect) {
+                    this.preExamPresetSelect.value = val;
+                    this.updatePreExamPersonaSummary();
+                }
+            }
+        } else {
+            // Preset values
+            this.applyPreset(val);
+            this.customPrompt = "";
+            this.promptTextarea.value = "";
+            this.presetSelect.value = val;
+            this.updatePersonaSummary();
+
+            // Sync Pre-Exam select
+            if (this.preExamPresetSelect) {
+                this.preExamPresetSelect.value = val;
+                this.updatePreExamPersonaSummary();
+            }
+        }
+    }
+
+    loadPreExamPersonaBank() {
+        const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+        
+        let html = `
+            <option value="cooperative">💻 แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="anxious">😰 คนไข้วิตกกังวลสูง (Anxious Preset)</option>
+            <option value="severe_pain">😫 คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
+            <option value="combative">😡 คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+        `;
+        
+        if (list.length > 0) {
+            html += `<optgroup label="💾 บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
+            list.forEach(p => {
+                html += `<option value="custom_${p.id}">👤 ${p.name}</option>`;
+            });
+            html += `</optgroup>`;
+        }
+        
+        html += `
+            <option value="create_new">➕ ปรับแต่งบุคลิกใหม่...</option>
+        `;
+        
+        if (this.preExamPresetSelect) {
+            this.preExamPresetSelect.innerHTML = html;
+            this.updatePreExamPersonaSummary();
+        }
+    }
+
+    handlePreExamPersonaChange() {
+        const val = this.preExamPresetSelect.value;
+        if (val === 'create_new') {
+            // Reset to cooperative defaults for drawer setup
+            this.presetSelect.value = 'cooperative';
+            this.applyPreset('cooperative');
+            this.promptTextarea.value = "";
+            
+            // Clean Bank Saving drawers controls
+            this.saveToBankCheckbox.checked = false;
+            this.bankInputGroup.style.display = 'none';
+            this.bankPersonaName.value = "";
+            
+            // Revert pre-exam selector state to avoid visual glitches
+            this.preExamPresetSelect.value = 'cooperative';
+            this.updatePreExamPersonaSummary();
+            
+            this.openDrawer();
+        } else if (val.startsWith('custom_')) {
+            const id = val.replace('custom_', '');
+            const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            const p = list.find(item => item.id === id);
+            if (p) {
+                // Sync simulation active state
+                this.anger = p.anger;
+                this.sadness = p.sadness;
+                this.happiness = p.happiness;
+                this.customPrompt = p.additional_instructions || "";
+                
+                // Sync drawer sliders UI
+                this.angerSlider.value = p.anger;
+                this.angerVal.innerText = p.anger + "%";
+                this.sadnessSlider.value = p.sadness;
+                this.sadnessVal.innerText = p.sadness + "%";
+                this.happinessSlider.value = p.happiness;
+                this.happinessVal.innerText = p.happiness + "%";
+                this.promptTextarea.value = p.additional_instructions || "";
+                this.presetSelect.value = 'custom';
+                
+                this.calculatePAD();
+                this.updatePreExamPersonaSummary();
+                
+                // Also update portal select to match
+                this.portalPresetSelect.value = val;
+                this.updatePersonaSummary();
+            }
+        } else {
+            // Preset values
+            this.applyPreset(val);
+            this.customPrompt = "";
+            this.promptTextarea.value = "";
+            this.presetSelect.value = val;
+            this.updatePreExamPersonaSummary();
+            
+            // Also update portal select to match
+            this.portalPresetSelect.value = val;
+            this.updatePersonaSummary();
+        }
+    }
+
+    updatePreExamPersonaSummary() {
+        const selectedVal = this.preExamPresetSelect.value;
+        const badge = this.shadowDOM.getElementById('pre-exam-summary-badge');
+        if (!badge) return;
+        
+        // Show/hide delete button depending on whether selected persona is custom
+        const deleteBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
+        if (deleteBtn) {
+            if (selectedVal && selectedVal.startsWith('custom_')) {
+                deleteBtn.style.display = 'flex';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+        
+        let text = "";
+        if (selectedVal === 'cooperative') {
+            text = "<b>ลักษณะคนไข้:</b> สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+        } else if (selectedVal === 'normal') {
+            text = "<b>ลักษณะคนไข้:</b> บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+        } else if (selectedVal === 'anxious') {
+            text = "<b>ลักษณะคนไข้:</b> กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+        } else if (selectedVal === 'severe_pain') {
+            text = "<b>ลักษณะคนไข้:</b> มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+        } else if (selectedVal === 'combative') {
+            text = "<b>ลักษณะคนไข้:</b> หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+        } else if (selectedVal === 'depressed') {
+            text = "<b>ลักษณะคนไข้:</b> ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+        } else if (selectedVal.startsWith('custom_')) {
+            const id = selectedVal.replace('custom_', '');
+            const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            const p = list.find(item => item.id === id);
+            if (p) {
+                text = `<b>ลักษณะคนไข้ (คลัง):</b> ${p.name}<br>• โกรธ: ${p.anger}% | เศร้า: ${p.sadness}% | สุข: ${p.happiness}%<br>• คำสั่งเสริม: ${p.additional_instructions || 'ไม่มี'}`;
+            } else {
+                text = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+            }
+        } else {
+            text = "แม่แบบบุคลิกแพทย์จำลอง";
+        }
+        badge.innerHTML = text;
+    }
+
+    deleteSelectedPersona() {
+        const val = this.portalPresetSelect.value; 
+        if (!val || !val.startsWith('custom_')) return;
+        
+        const id = val.replace('custom_', '');
+        let list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+        const persona = list.find(p => p.id === id);
+        
+        if (!persona) return;
+        
+        if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบุคลิก "${persona.name}" ออกจากคลังถาวร?`)) {
+            list = list.filter(p => p.id !== id);
+            localStorage.setItem('osce_custom_personas', JSON.stringify(list));
+            alert("ลบบุคลิกภาพออกจากคลังสำเร็จ!");
+            
+            // Sync dropdown lists
+            this.loadPersonaBank();
+            this.loadPreExamPersonaBank();
+            
+            // Revert back to cooperative calm default
+            this.portalPresetSelect.value = 'cooperative';
+            this.preExamPresetSelect.value = 'cooperative';
+            this.handlePersonaChange();
+        }
+    }
+
+    toggleBankInputGroup(checked) {
+        if (checked) {
+            this.bankInputGroup.style.display = 'block';
+            const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            if (list.length >= 5) {
+                this.bankReplaceSection.style.display = 'block';
+                let radiosHtml = "";
+                list.forEach((p, idx) => {
+                    const checkedAttr = idx === 0 ? "checked" : "";
+                    radiosHtml += `
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #475569; cursor: pointer; margin-top: 4px;">
+                            <input type="radio" name="replace-persona" value="${p.id}" ${checkedAttr}>
+                            แทนที่: <b>${p.name}</b>
+                        </label>
+                    `;
+                });
+                this.bankReplaceRadios.innerHTML = radiosHtml;
+            } else {
+                this.bankReplaceSection.style.display = 'none';
+            }
+        } else {
+            this.bankInputGroup.style.display = 'none';
+        }
+    }
+
+    updatePersonaSummary() {
+        const selectedVal = this.portalPresetSelect.value;
+        const badge = this.shadowDOM.getElementById('persona-summary-badge');
+        
+        // Show/hide delete button depending on whether selected persona is custom
+        const deleteBtn = this.shadowDOM.getElementById('delete-persona-btn');
+        if (deleteBtn) {
+            if (selectedVal && selectedVal.startsWith('custom_')) {
+                deleteBtn.style.display = 'flex';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+        }
+        
+        let text = "";
+        if (selectedVal === 'cooperative') {
+            text = "<b>ลักษณะคนไข้:</b> สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+        } else if (selectedVal === 'normal') {
+            text = "<b>ลักษณะคนไข้:</b> บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+        } else if (selectedVal === 'anxious') {
+            text = "<b>ลักษณะคนไข้:</b> กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+        } else if (selectedVal === 'severe_pain') {
+            text = "<b>ลักษณะคนไข้:</b> มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+        } else if (selectedVal === 'combative') {
+            text = "<b>ลักษณะคนไข้:</b> หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+        } else if (selectedVal === 'depressed') {
+            text = "<b>ลักษณะคนไข้:</b> ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+        } else if (selectedVal.startsWith('custom_')) {
+            const id = selectedVal.replace('custom_', '');
+            const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+            const p = list.find(item => item.id === id);
+            if (p) {
+                text = `<b>ลักษณะคนไข้ (คลัง):</b> ${p.name}<br>• โกรธ: ${p.anger}% | เศร้า: ${p.sadness}% | สุข: ${p.happiness}%<br>• คำสั่งเสริม: ${p.additional_instructions || 'ไม่มี'}`;
+            } else {
+                text = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+            }
+        } else {
+            text = "แม่แบบบุคลิกแพทย์จำลอง";
+        }
+        badge.innerHTML = text;
     }
 
     switchTab(os) {
@@ -1250,6 +1836,10 @@ class AIPatientSimulator extends HTMLElement {
                     return;
                 }
 
+                if (text.includes("ครบข้อจำกัด 30 คำถามสำหรับรอบประเมินนี้แล้ว")) {
+                    this.showSessionEndedState();
+                }
+
                 if (!this.currentPatientMsgDiv) {
                     this.currentPatientMsgDiv = document.createElement('div');
                     this.currentPatientMsgDiv.className = 'msg patient';
@@ -1304,6 +1894,11 @@ class AIPatientSimulator extends HTMLElement {
                 this.micBtn.innerText = "🛑 คลิกเพื่อส่งคำถาม";
                 this.micBtn.style.backgroundColor = "#dc3545";
                 
+                // Hide cancel button during recording
+                if (this.cancelPortalBtn) {
+                    this.cancelPortalBtn.style.display = 'none';
+                }
+                
                 this.tempMsgDiv = document.createElement('div');
                 this.tempMsgDiv.className = 'msg user';
                 this.tempMsgDiv.innerText = "👨‍⚕️ คุณ: ...";
@@ -1330,8 +1925,14 @@ class AIPatientSimulator extends HTMLElement {
 
                 if (final_transcript.trim() !== '') {
                     this.sendViaWS(final_transcript);
-                } else if (this.tempMsgDiv) {
-                    this.tempMsgDiv.remove();
+                } else {
+                    if (this.tempMsgDiv) {
+                        this.tempMsgDiv.remove();
+                    }
+                    // Restore cancel button at 0 turns if recording was cancelled/empty
+                    if (this.cancelPortalBtn) {
+                        this.cancelPortalBtn.style.display = 'inline-block';
+                    }
                 }
             };
 
@@ -1342,16 +1943,25 @@ class AIPatientSimulator extends HTMLElement {
     }
 
     sendViaWS(text) {
+        // Enforce hiding cancel button permanently upon sending the first query
+        if (this.cancelPortalBtn) {
+            this.cancelPortalBtn.style.display = 'none';
+        }
+        
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            // Package up the chat payload alongside dynamic GGUF & dynamic PAD vector parameters
+            // Package up the chat payload alongside GGUF & PAD parameters
             this.socket.send(JSON.stringify({ 
                 session_id: this.sessionId, 
                 student_text: text,
                 case_id: this.selectedCaseId, // 👈 Dynamically bind selected case to session
+                student_id: this.studentId, // 👈 Send student details to WS for SQLite logs & limits
+                student_name: this.studentName,
                 config: {
                     model: this.selectedModel,
                     temperature: this.temperature,
-                    system_prompt_custom: this.customPrompt,
+                    api_tier: this.apiTier, // 👈 Send current tier (free or paid/Typhoon)
+                    system_prompt_custom: "", // 👈 Students no longer override custom system prompt templates!
+                    additional_instructions: this.customPrompt, // 👈 Send additional behavior instructions!
                     emotions: {
                         anger: this.anger,
                         sadness: this.sadness,
@@ -1363,29 +1973,31 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
+    showSessionEndedState() {
+        this.micBtn.style.display = 'none';
+        this.endBtn.style.display = 'none';
+        this.newBtn.style.display = 'inline-block';
+        this.viewEvalBtn.style.display = 'inline-block';
+        if (this.portalBtn) this.portalBtn.style.display = 'inline-block';
+    }
+
     endSimulation() {
         if (confirm("คุณแน่ใจหรือไม่ว่าต้องการจบการซักประวัติ?")) {
             this.sendViaWS("__END_SESSION__");
-            this.micBtn.disabled = true;
-            this.endBtn.style.display = 'none';
-            this.newBtn.style.display = 'inline-block';
-            this.viewEvalBtn.style.display = 'inline-block';
+            this.showSessionEndedState();
         }
     }
 
     newSimulation() {
+        this.closeConnections();
+        this.closeDrawer(); // Ensure settings drawer is closed
         this.sessionId = "session_" + Math.random().toString(36).substring(7);
         this.chatBox.innerHTML = "";
-        this.micBtn.disabled = false;
-        this.endBtn.style.display = 'inline-block';
-        this.newBtn.style.display = 'none';
-        this.viewEvalBtn.style.display = 'none';
         this.currentPatientMsgDiv = null;
         this.ttsQueue = [];
         this.isSpeaking = false;
         window.speechSynthesis.cancel();
         
-        // In selective mode, return to cards grid. In random, immediately reconnect
         if (this.mode === 'selective') {
             this.showScreen('portal');
         } else {
@@ -1393,12 +2005,42 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
+    renderEvaluationHTML(data) {
+        let html = `<div style='text-align:center; font-size: 24px; margin-bottom: 20px;'>คะแนนรวม: <b>${data.overall_score || data.total_score || 0}/5</b></div>`;
+        
+        const scores = data.scores || {};
+        for (const [key, score] of Object.entries(scores)) {
+            const label = key.replace(/_/g, ' ').toUpperCase();
+            html += `
+                <div class="score-row">
+                    <span>${label}</span>
+                    <span class="score-stars">${'⭐'.repeat(score)}</span>
+                </div>
+            `;
+        }
+
+        const feedback = data.feedback || {};
+        const strengths = feedback.strengths || [];
+        const weaknesses = feedback.weaknesses || [];
+        const suggestion = feedback.suggestion || "";
+
+        html += `
+            <div class="feedback-section">
+                <p class="strength">✅ จุดเด่น:</p>
+                <ul>${strengths.map(s => `<li>${s}</li>`).join('')}</ul>
+                <p class="weakness">❌ จุดที่ควรพัฒนา:</p>
+                <ul>${weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
+                <p>💡 <b>คำแนะนำเพิ่มเติม:</b> ${suggestion}</p>
+            </div>
+        `;
+        return html;
+    }
+
     async showEvaluation() {
         this.evalModal.style.display = 'block';
         this.evalResults.innerHTML = "<p style='text-align:center;'>⏳ กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
 
         try {
-            // Adapt URL call depending on relative vs absolute server URL
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
             const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/evaluate/${this.sessionId}`);
             const data = await response.json();
@@ -1408,32 +2050,75 @@ class AIPatientSimulator extends HTMLElement {
                 return;
             }
 
-            let html = `<div style='text-align:center; font-size: 24px; margin-bottom: 20px;'>คะแนนรวม: <b>${data.overall_score}/5</b></div>`;
-            
-            for (const [key, score] of Object.entries(data.scores)) {
-                const label = key.replace(/_/g, ' ').toUpperCase();
-                html += `
-                    <div class="score-row">
-                        <span>${label}</span>
-                        <span class="score-stars">${'⭐'.repeat(score)}</span>
-                    </div>
-                `;
-            }
-
-            html += `
-                <div class="feedback-section">
-                    <p class="strength">✅ จุดเด่น:</p>
-                    <ul>${data.feedback.strengths.map(s => `<li>${s}</li>`).join('')}</ul>
-                    <p class="weakness">❌ จุดที่ควรพัฒนา:</p>
-                    <ul>${data.feedback.weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
-                    <p>💡 <b>คำแนะนำเพิ่มเติม:</b> ${data.feedback.suggestion}</p>
-                </div>
-            `;
-            this.evalResults.innerHTML = html;
-
+            this.evalResults.innerHTML = this.renderEvaluationHTML(data);
         } catch (e) {
             console.error("Evaluation loading failed:", e);
             this.evalResults.innerHTML = `<p style='color:red;'>❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อดึงข้อมูลประเมินได้</p>`;
+        }
+    }
+
+    showEvaluationDetail(evaluation, scenarioName, sessionId) {
+        this.evalModal.style.display = 'block';
+        this.evalResults.innerHTML = `
+            <h3 style="text-align: center; margin-top: 0; color: #1a1e29;">เคสการรักษา: ${scenarioName}</h3>
+            <div style="font-size: 11px; text-align: center; color: #64748b; margin-bottom: 15px;">รหัสประเมิน: ${sessionId}</div>
+            ${this.renderEvaluationHTML(evaluation)}
+        `;
+    }
+
+    async loadStudentHistory() {
+        this.showScreen('history');
+        this.historyLoading.style.display = 'block';
+        this.historyListContainer.innerHTML = "";
+        
+        try {
+            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+            const studentId = this.studentId || "guest_student";
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/history/${studentId}`);
+            const historyList = await response.json();
+            
+            this.historyLoading.style.display = 'none';
+            
+            if (!historyList || historyList.length === 0) {
+                this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: #64748b;'>❌ ยังไม่มีประวัติการสอบประเมินของคุณในระบบ</p>";
+                return;
+            }
+            
+            historyList.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'case-card';
+                card.style.flexDirection = 'row';
+                card.style.justifyContent = 'space-between';
+                card.style.alignItems = 'center';
+                
+                const timestamp = s.updated_at ? new Date(s.updated_at).toLocaleString('th-TH', { hour12: false }) : 'ไม่ระบุ';
+                const scoreText = s.score ? `⭐ ${s.score}/5` : '⏳ รอตรวจ';
+                const statusClass = s.status === 'completed' ? 'badge-general' : 'badge-abdomen';
+                const statusText = s.status === 'completed' ? 'เสร็จสิ้นการซัก' : 'ยังไม่จบการซัก';
+                
+                card.innerHTML = `
+                    <div style="flex: 1; text-align: left;">
+                        <span class="badge ${statusClass}">${statusText}</span>
+                        <h4 class="case-title" style="margin-top: 5px;">เคส: ${s.scenario_name}</h4>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">📅 สอบเมื่อ: ${timestamp} | 💬 คุยไป ${s.turns} ประโยค</div>
+                    </div>
+                    <div style="text-align: right; min-width: 80px;">
+                        <b style="color: #f59e0b; font-size: 16px;">${scoreText}</b>
+                    </div>
+                `;
+                
+                if (s.evaluation) {
+                    card.addEventListener('click', () => {
+                        this.showEvaluationDetail(s.evaluation, s.scenario_name, s.session_id);
+                    });
+                }
+                
+                this.historyListContainer.appendChild(card);
+            });
+        } catch (e) {
+            console.error("Failed to load student history:", e);
+            this.historyLoading.style.display = 'none';
+            this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: red;'>❌ ดึงประวัติผิดพลาด ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>";
         }
     }
 
@@ -1487,8 +2172,21 @@ class AIPatientAdmin extends HTMLElement {
     }
 
     checkAuthentication() {
-        const token = sessionStorage.getItem('osce_admin_token');
-        if (token === 'admin_verified_token_xyz') {
+        this.instructorId = this.getAttribute('instructor-id') || this.getAttribute('instructor_id');
+        this.role = this.getAttribute('role');
+
+        if (!this.instructorId) {
+            this.instructorId = sessionStorage.getItem('osce_instructor_id') || localStorage.getItem('osce_instructor_id');
+            this.role = sessionStorage.getItem('osce_admin_role') || localStorage.getItem('osce_admin_role');
+        }
+
+        const isAuthorized = this.instructorId || this.role === 'admin' || sessionStorage.getItem('osce_admin_token') === 'admin_verified_token_xyz';
+
+        if (isAuthorized) {
+            if (this.instructorId) {
+                sessionStorage.setItem('osce_instructor_id', this.instructorId);
+                if (this.role) sessionStorage.setItem('osce_admin_role', this.role);
+            }
             this.authGateScreen.style.display = 'none';
             this.paneCases.classList.add('active');
             // Load tables
@@ -1501,50 +2199,21 @@ class AIPatientAdmin extends HTMLElement {
         }
     }
 
-    async handleAuthSubmit() {
-        const passcode = this.authPasscodeInput.value.trim();
-        this.authErrorMsg.style.display = 'none';
-        
-        if (!passcode) {
-            this.authErrorMsg.innerText = "กรุณากรอกรหัสผ่าน!";
-            this.authErrorMsg.style.display = 'block';
-            return;
-        }
-        
-        try {
-            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/auth`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ role: 'admin', passcode: passcode })
-            });
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                sessionStorage.setItem('osce_admin_token', data.token);
-                this.authPasscodeInput.value = '';
-                this.checkAuthentication();
-            } else {
-                this.authErrorMsg.innerText = data.message || "รหัสผ่านไม่ถูกต้อง!";
-                this.authErrorMsg.style.display = 'block';
-            }
-        } catch (err) {
-            console.error("Auth validation failed:", err);
-            // Local fallback validation if offline/error to help smooth presentation
-            if (passcode === 'admin123') {
-                sessionStorage.setItem('osce_admin_token', 'admin_verified_token_xyz');
-                this.authPasscodeInput.value = '';
-                this.checkAuthentication();
-            } else {
-                this.authErrorMsg.innerText = "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ตรวจรหัสผ่านได้!";
-                this.authErrorMsg.style.display = 'block';
-            }
-        }
+    static get observedAttributes() {
+        return ['server-url', 'instructor-id', 'instructor_id', 'role'];
     }
 
-    lockAdmin() {
-        sessionStorage.removeItem('osce_admin_token');
-        this.checkAuthentication();
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue === newValue) return;
+        if (name === 'server-url') {
+            this.serverUrl = newValue;
+        } else if (name === 'instructor-id' || name === 'instructor_id') {
+            this.instructorId = newValue;
+            this.checkAuthentication();
+        } else if (name === 'role') {
+            this.role = newValue;
+            this.checkAuthentication();
+        }
     }
 
     render() {
@@ -1744,7 +2413,8 @@ class AIPatientAdmin extends HTMLElement {
                     background-color: #1e293b;
                     border-radius: 12px;
                     border: 1px solid #334155;
-                    overflow: hidden;
+                    max-height: 520px;
+                    overflow-y: auto;
                     margin-bottom: 15px;
                 }
                 .admin-table {
@@ -1794,6 +2464,9 @@ class AIPatientAdmin extends HTMLElement {
                     height: fit-content;
                     max-height: 700px;
                     overflow-y: auto;
+                    position: sticky;
+                    top: 24px;
+                    align-self: start;
                 }
                 .editor-header, .detail-header {
                     display: flex;
@@ -1970,6 +2643,10 @@ class AIPatientAdmin extends HTMLElement {
                     50% { transform: translateY(-10px); }
                     100% { transform: translateY(0px); }
                 }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
                 .auth-title {
                     font-size: 22px;
                     font-weight: 800;
@@ -2051,12 +2728,17 @@ class AIPatientAdmin extends HTMLElement {
             </style>
             
             <div class="admin-container">
+                <!-- Admin Loading Overlay -->
+                <div id="admin-loading-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 40000; align-items: center; justify-content: center; flex-direction: column; color: white; border-radius: 16px;">
+                    <div class="auth-icon" style="font-size: 48px; margin-bottom: 15px; animation: spin 2s linear infinite; display: inline-block;">⏳</div>
+                    <div style="font-size: 16px; font-weight: bold; color: #3b82f6; margin-bottom: 8px;">กำลังบันทึกและปรับปรุงเวกเตอร์ (Vectorizing Case)...</div>
+                    <div style="font-size: 12px; color: #94a3b8;">ระบบกำลังคำนวณเวกเตอร์ของประวัติย้อนหลังด้วย AI อาจใช้เวลาสักครู่...</div>
+                </div>
                 <div class="admin-navbar">
                     <div class="admin-logo">🏥 แผงควบคุมผู้ประเมิน OSCE AI</div>
                     <div class="admin-tabs" style="display: flex; align-items: center; gap: 8px;">
                         <button class="tab-link active" id="tab-cases">🩺 คลังเคสคนไข้สมมติ</button>
                         <button class="tab-link" id="tab-sessions">📊 ผลสัมฤทธิ์นักศึกษา</button>
-                        <button class="lock-btn" id="lock-admin-btn" title="ออกจากระบบ / ล็อคแผงควบคุม" style="margin-left: 10px;">🔒 ล็อคแผง</button>
                     </div>
                 </div>
                 
@@ -2136,6 +2818,7 @@ class AIPatientAdmin extends HTMLElement {
                         <!-- Student Session Table -->
                         <div class="sessions-list-column">
                             <h3>📊 บันทึกการเข้าสอบซักประวัติของนักศึกษา</h3>
+                            <input type="text" id="session-search" class="form-control" placeholder="🔍 ค้นหารหัสนักศึกษา ชื่อเคส หรือรหัสการสอบ...">
                             <div class="table-wrapper">
                                 <table class="admin-table">
                                     <thead>
@@ -2145,6 +2828,7 @@ class AIPatientAdmin extends HTMLElement {
                                             <th>จำนวนรอบคำถาม</th>
                                             <th>คะแนน AI</th>
                                             <th>สถานะการสอบ</th>
+                                            <th>การจัดการ</th>
                                         </tr>
                                     </thead>
                                     <tbody id="sessions-table-body">
@@ -2168,13 +2852,13 @@ class AIPatientAdmin extends HTMLElement {
                 </div>
             <!-- Access passcode gateway screen -->
             <div id="auth-gate-screen" class="auth-overlay" style="display: flex;">
-                <div class="auth-card">
-                    <div class="auth-icon">👨‍🏫</div>
-                    <div class="auth-title">เข้าใช้งานในบทบาท "อาจารย์ผู้ประเมิน"</div>
-                    <div class="auth-desc">กรุณากรอกรหัสผ่านเพื่อปลดล็อคคอนโซลวิเคราะห์และประเมินผล (Admin Console)<br><small style="color: #94a3b8;">(รหัสผ่านแนะนำ: admin123)</small></div>
-                    <input type="password" id="auth-passcode-input" class="form-control" placeholder="ป้อนรหัสผ่านวิเคราะห์ผล..." style="text-align: center; margin-bottom: 15px;">
-                    <button id="auth-submit-btn" class="auth-submit-btn">🔓 ปลดล็อคระบบ</button>
-                    <div id="auth-error-msg" class="auth-error">รหัสผ่านสำหรับสิทธิ์ใช้งานไม่ถูกต้อง!</div>
+                <div class="auth-card" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(15, 23, 42, 0.95); max-width: 380px;">
+                    <div class="auth-icon" style="font-size: 56px; margin-bottom: 16px; filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.3)); display: inline-block;">👨‍🏫</div>
+                    <div class="auth-title" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 12px;">กรุณาเข้าสู่ระบบด้วยสิทธิ์ผู้ประเมิน</div>
+                    <div class="auth-desc" style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
+                        ระบบตรวจไม่พบสิทธิ์ของอาจารย์ผู้ประเมินในขณะนี้<br>
+                        กรุณาเข้าสู่ระบบผ่านเว็บไซต์หลักของสถาบัน เพื่อจัดการข้อสอบและเข้าดูผลการประเมินการซักประวัติของนักศึกษา
+                    </div>
                 </div>
             </div>
         </div>
@@ -2193,10 +2877,6 @@ class AIPatientAdmin extends HTMLElement {
         
         // Auth elements
         this.authGateScreen = this.shadowDOM.getElementById('auth-gate-screen');
-        this.authPasscodeInput = this.shadowDOM.getElementById('auth-passcode-input');
-        this.authSubmitBtn = this.shadowDOM.getElementById('auth-submit-btn');
-        this.authErrorMsg = this.shadowDOM.getElementById('auth-error-msg');
-        this.lockAdminBtn = this.shadowDOM.getElementById('lock-admin-btn');
         
         // Cases search & lists
         this.caseSearch = this.shadowDOM.getElementById('case-search');
@@ -2226,7 +2906,10 @@ class AIPatientAdmin extends HTMLElement {
         // Live JSON validator
         this.editHiddenRecord.addEventListener('input', () => this.validateJSON());
         
-        // Student sessions
+        // Student sessions search & details
+        this.sessionSearch = this.shadowDOM.getElementById('session-search');
+        this.sessionSearch.addEventListener('input', () => this.filterSessions());
+        
         this.sessionsTableBody = this.shadowDOM.getElementById('sessions-table-body');
         this.sessionDetailPanel = this.shadowDOM.getElementById('session-detail-panel');
         this.btnCloseDetail = this.shadowDOM.getElementById('btn-close-detail');
@@ -2235,13 +2918,7 @@ class AIPatientAdmin extends HTMLElement {
         this.btnCloseDetail.addEventListener('click', () => {
             this.sessionDetailPanel.style.display = 'none';
         });
-
-        // Auth Event listeners
-        this.authSubmitBtn.addEventListener('click', () => this.handleAuthSubmit());
-        this.authPasscodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.handleAuthSubmit();
-        });
-        this.lockAdminBtn.addEventListener('click', () => this.lockAdmin());
+        this.adminLoadingOverlay = this.shadowDOM.getElementById('admin-loading-overlay');
     }
 
     switchTab(tabName) {
@@ -2350,31 +3027,18 @@ class AIPatientAdmin extends HTMLElement {
                 const all = await res.json();
                 const matched = all.find(item => item.id === caseId);
                 
-                // Fetch detailed variables from ChromaDB via session fallback/mock loading
-                // For simplicity, we decode ChromaDB metadata details directly
                 if (matched) {
                     this.editCaseId.value = matched.id;
                     this.editScenarioName.value = matched.scenario_name;
                     this.editCategory.value = matched.category || "อายุรกรรม (Medicine)";
                     this.editChiefComplaint.value = matched.chief_complaint;
                     
-                    // Pull detailed hidden record by executing a temporary session call or mock matching
-                    // Let's resolve the hidden record from ChromaDB structure using session evaluations
-                    // ChromaDB retrieves hidden records inside main.py helper get_case_by_id
-                    // Let's call a fast endpoint or search locally
-                    const sessionMockResponse = await fetch(`${fetchBase.replace(/\/$/, '')}/ws/chat`); // Dummy ws trigger to load
-                    // Because we already saved cases in database, we fetch standard database details
-                    // Let's parse hidden records if present in the matched item
                     let hiddenRec = {
                         "symptom_detail": "อาการไม่ระบุชัดเจน",
                         "severity": "เบาบาง",
                         "onset": "ระบุประวัติไม่ได้"
                     };
                     
-                    // We also extend main.py to send details or fallback gracefully
-                    // In main.py list_cases, we can return the entire model structure. Let's make sure it parses properly.
-                    // We modify the javascript to parse matched element's custom hidden record variables
-                    // Fetch from session evaluator if loaded or read default
                     this.editHiddenRecord.value = JSON.stringify(matched.hidden_record || hiddenRec, null, 4);
                 }
             } catch (err) {
@@ -2427,6 +3091,14 @@ class AIPatientAdmin extends HTMLElement {
             return;
         }
         
+        // Show loading status overlay
+        if (this.adminLoadingOverlay) {
+            this.adminLoadingOverlay.style.display = 'flex';
+        }
+        this.btnSaveCase.disabled = true;
+        this.btnCancelSave.disabled = true;
+        this.btnCloseEditor.disabled = true;
+        
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
             const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/cases`, {
@@ -2446,6 +3118,14 @@ class AIPatientAdmin extends HTMLElement {
         } catch (err) {
             console.error("Error saving clinical case:", err);
             alert("ไม่สามารถบันทึกเคสได้ ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์หลัก");
+        } finally {
+            // Hide loading overlay
+            if (this.adminLoadingOverlay) {
+                this.adminLoadingOverlay.style.display = 'none';
+            }
+            this.btnSaveCase.disabled = false;
+            this.btnCancelSave.disabled = false;
+            this.btnCloseEditor.disabled = false;
         }
     }
 
@@ -2484,7 +3164,7 @@ class AIPatientAdmin extends HTMLElement {
     renderSessionsList(sessions) {
         this.sessionsTableBody.innerHTML = '';
         if (sessions.length === 0) {
-            this.sessionsTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">ยังไม่มีประวัติการสอบประเมินของนักศึกษา</td></tr>`;
+            this.sessionsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">ยังไม่มีประวัติการสอบประเมินของนักศึกษา</td></tr>`;
             return;
         }
         
@@ -2506,11 +3186,55 @@ class AIPatientAdmin extends HTMLElement {
                 <td style="text-align:center;">${s.turns} Turns</td>
                 <td><b style="color:#f59e0b;">${scoreText}</b></td>
                 <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>
+                    <button class="btn btn-danger btn-delete-session" data-id="${s.session_id}">ลบ</button>
+                </td>
             `;
             
             row.addEventListener('click', () => this.viewSessionDetail(s.session_id));
+            
+            // Wire delete session button with stopPropagation to prevent opening details
+            const deleteBtn = row.querySelector('.btn-delete-session');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteSession(s.session_id);
+            });
+            
             this.sessionsTableBody.appendChild(row);
         });
+    }
+
+    filterSessions() {
+        const query = this.sessionSearch.value.toLowerCase().trim();
+        const filtered = this.sessionsList.filter(s => 
+            s.session_id.toLowerCase().includes(query) || 
+            s.scenario_name.toLowerCase().includes(query) ||
+            (s.student_id && s.student_id.toLowerCase().includes(query)) ||
+            (s.student_name && s.student_name.toLowerCase().includes(query))
+        );
+        this.renderSessionsList(filtered);
+    }
+
+    async deleteSession(sessionId) {
+        if (!confirm(`คุณต้องการลบประวัติการสอบรหัส "${sessionId}" และบทสนทนาทั้งหมดถาวรใช่หรือไม่?`)) return;
+        
+        try {
+            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+            const res = await fetch(`${fetchBase.replace(/\/$/, '')}/api/sessions/${sessionId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert("ลบประวัติการสอบสำเร็จ!");
+                this.loadSessions();
+                this.sessionDetailPanel.style.display = 'none';
+            } else {
+                alert("ไม่สามารถลบข้อมูลได้: " + data.message);
+            }
+        } catch (err) {
+            console.error("Error deleting session:", err);
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์เพื่อลบข้อมูล");
+        }
     }
 
     async viewSessionDetail(sessionId) {
@@ -2642,4 +3366,3 @@ class AIPatientAdmin extends HTMLElement {
 }
 
 customElements.define('ai-patient-admin', AIPatientAdmin);
-

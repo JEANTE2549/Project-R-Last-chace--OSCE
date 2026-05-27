@@ -16,21 +16,103 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
 
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from datetime import datetime
+
+DATABASE_URL = "sqlite:///./data/osce_platform.db"
+os.makedirs("./data", exist_ok=True)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# --- SQLite Relational Models ---
+class DB_Case(Base):
+    __tablename__ = "cases"
+    id = Column(String, primary_key=True, index=True)
+    scenario_name = Column(String)
+    chief_complaint = Column(Text)
+    category = Column(String)
+    hidden_record = Column(Text) # JSON serialized string
+
+class DB_Session(Base):
+    __tablename__ = "sessions"
+    session_id = Column(String, primary_key=True, index=True)
+    student_id = Column(String, index=True)
+    student_name = Column(String)
+    scenario_name = Column(String)
+    created_at = Column(DateTime)
+    updated_at = Column(DateTime)
+    turns = Column(Integer, default=0)
+    status = Column(String, default="active")
+    score = Column(Integer)
+    evaluation_json = Column(Text) # JSON serialized feedback
+
+class DB_Dialogue(Base):
+    __tablename__ = "dialogues"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_id = Column(String, index=True)
+    role = Column(String) # "user" or "assistant"
+    content = Column(Text)
+    created_at = Column(DateTime)
+
+class DB_QuotaUsage(Base):
+    __tablename__ = "quota_usage"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    student_id = Column(String, index=True)
+    date_str = Column(String, index=True) # YYYY-MM-DD
+    count = Column(Integer, default=0)
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="AI Patient Simulator API")
 
 # Initialize Ollama client globally for better performance and reliability
 ollama_client = ollama.AsyncClient(host='http://127.0.0.1:11434')
 
 # --- 1. Database Connection ---
-print("กำลังเชื่อมต่อกับ medical_db...")
+print("กำลังเชื่อมต่อกับ medical_db (ChromaDB)...")
 try:
     db_client = chromadb.PersistentClient(path="./data/medical_db")
     collection = db_client.get_collection("sor_ror_wor_cases")
     all_cases = collection.get()
-    print(f"โหลดข้อมูลสำเร็จ {len(all_cases['ids'])} เคส")
+    print(f"โหลดข้อมูลจาก ChromaDB สำเร็จ {len(all_cases['ids'])} เคส")
 except Exception as e:
     print(f"ข้อผิดพลาดในการโหลด ChromaDB: {e}")
     all_cases = None
+
+# Auto-seed SQLite Database from ChromaDB
+def seed_sqlite_database():
+    db = SessionLocal()
+    try:
+        if db.query(DB_Case).count() == 0 and all_cases and all_cases['ids']:
+            print("⏳ กำลังย้ายข้อมูลเคสจาก ChromaDB ลง SQLite (Production Grade Migration)...")
+            for idx in range(len(all_cases['ids'])):
+                case_id = all_cases['ids'][idx]
+                chief_complaint = all_cases['documents'][idx]
+                metadata = all_cases['metadatas'][idx]
+                
+                category = metadata.get('category') or metadata.get('group') or "เคสทั่วไป (General Medicine)"
+                scenario_name = metadata.get('scenario_name', 'Unknown')
+                hidden_record = metadata.get('hidden_record', '{}')
+                
+                db_case = DB_Case(
+                    id=case_id,
+                    scenario_name=scenario_name,
+                    chief_complaint=chief_complaint,
+                    category=category,
+                    hidden_record=hidden_record
+                )
+                db.add(db_case)
+            db.commit()
+            print("✅ ย้ายข้อมูลเคสลง SQLite สำเร็จ!")
+    except Exception as e:
+        print(f"เกิดข้อผิดพลาดในการย้ายข้อมูลเคส: {e}")
+    finally:
+        db.close()
+
+seed_sqlite_database()
 
 # --- 2. State Management ---
 chat_sessions = {}
@@ -114,6 +196,149 @@ def construct_patient_prompt(case_data, revealed_info):
 5. ตอบทีละคำถาม ไม่ต้องร่ายยาวรวบยอด"""
     return prompt
 
+# --- SQLite Helper Utilities ---
+def save_session_to_sqlite(session_data: dict):
+    db = SessionLocal()
+    try:
+        session_id = session_data['session_id']
+        case_data = session_data.get('case_data', {})
+        
+        db_sess = db.query(DB_Session).filter(DB_Session.session_id == session_id).first()
+        if not db_sess:
+            db_sess = DB_Session(session_id=session_id)
+            db.add(db_sess)
+            
+        db_sess.student_id = session_data.get('student_id') or "guest_student"
+        db_sess.student_name = session_data.get('student_name') or "Guest Student"
+        db_sess.scenario_name = case_data.get('scenario_name') or "สุ่มเคส"
+        db_sess.status = session_data.get('status') or "active"
+        
+        created_str = session_data.get('created_at')
+        if created_str:
+            try:
+                db_sess.created_at = datetime.fromisoformat(created_str)
+            except:
+                db_sess.created_at = datetime.now()
+        else:
+            db_sess.created_at = datetime.now()
+            
+        db_sess.updated_at = datetime.now()
+        
+        history = session_data.get('history', [])
+        user_turns = len([msg for msg in history if msg.get('role') == 'user'])
+        db_sess.turns = user_turns
+        
+        evaluation = session_data.get('evaluation')
+        if evaluation:
+            db_sess.score = evaluation.get('overall_score') or evaluation.get('total_score')
+            db_sess.evaluation_json = json.dumps(evaluation, ensure_ascii=False)
+            
+        db.commit()
+        
+        db.query(DB_Dialogue).filter(DB_Dialogue.session_id == session_id).delete()
+        for msg in history:
+            db_diag = DB_Dialogue(
+                session_id=session_id,
+                role=msg.get('role'),
+                content=msg.get('content'),
+                created_at=datetime.now()
+            )
+            db.add(db_diag)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"Error saving session {session_id} to SQLite: {e}")
+    finally:
+        db.close()
+
+def load_session_from_sqlite(session_id: str):
+    db = SessionLocal()
+    try:
+        db_sess = db.query(DB_Session).filter(DB_Session.session_id == session_id).first()
+        if not db_sess:
+            return None
+            
+        db_diags = db.query(DB_Dialogue).filter(DB_Dialogue.session_id == session_id).order_by(DB_Dialogue.id.asc()).all()
+        history = [{'role': d.role, 'content': d.content} for d in db_diags]
+        
+        db_case = db.query(DB_Case).filter(DB_Case.scenario_name == db_sess.scenario_name).first()
+        if db_case:
+            case_data = {
+                "chief_complaint": db_case.chief_complaint,
+                "scenario_name": db_case.scenario_name,
+                "hidden_record": json.loads(db_case.hidden_record) if db_case.hidden_record else {}
+            }
+        else:
+            case_data = {
+                "chief_complaint": "ปวดท้องมาก",
+                "scenario_name": db_sess.scenario_name,
+                "hidden_record": {}
+            }
+            
+        evaluation = json.loads(db_sess.evaluation_json) if db_sess.evaluation_json else None
+        
+        session_data = {
+            "session_id": db_sess.session_id,
+            "student_id": db_sess.student_id,
+            "student_name": db_sess.student_name,
+            "case_data": case_data,
+            "history": history,
+            "status": db_sess.status,
+            "created_at": db_sess.created_at.isoformat() if db_sess.created_at else None,
+            "updated_at": db_sess.updated_at.isoformat() if db_sess.updated_at else None
+        }
+        
+        if evaluation:
+            session_data['evaluation'] = evaluation
+            
+        return session_data
+    except Exception as e:
+        print(f"Error loading session {session_id} from SQLite: {e}")
+        return None
+    finally:
+        db.close()
+
+def check_and_increment_quota(student_id: str, max_limit: int = 50) -> bool:
+    db = SessionLocal()
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        usage = db.query(DB_QuotaUsage).filter(
+            DB_QuotaUsage.student_id == student_id,
+            DB_QuotaUsage.date_str == today_str
+        ).first()
+        
+        if not usage:
+            usage = DB_QuotaUsage(student_id=student_id, date_str=today_str, count=0)
+            db.add(usage)
+            db.commit()
+            
+        if usage.count >= max_limit:
+            return False
+            
+        usage.count += 1
+        db.commit()
+        return True
+    except Exception as e:
+        print(f"Error checking quota for student {student_id}: {e}")
+        return True
+    finally:
+        db.close()
+
+def get_student_quota_usage(student_id: str) -> int:
+    db = SessionLocal()
+    try:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        usage = db.query(DB_QuotaUsage).filter(
+            DB_QuotaUsage.student_id == student_id,
+            DB_QuotaUsage.date_str == today_str
+        ).first()
+        return usage.count if usage else 0
+    except Exception as e:
+        print(f"Error getting usage for student {student_id}: {e}")
+        return 0
+    finally:
+        db.close()
+
 # --- 3. API Endpoints ---
 @app.get("/")
 async def get_index():
@@ -163,6 +388,24 @@ async def create_case(case_data: CaseCreateRequest):
             ids=[case_data.id]
         )
         
+        # Sync to SQLite Relational database
+        db = SessionLocal()
+        try:
+            db_case = db.query(DB_Case).filter(DB_Case.id == case_data.id).first()
+            if not db_case:
+                db_case = DB_Case(id=case_data.id)
+                db.add(db_case)
+            db_case.scenario_name = case_data.scenario_name
+            db_case.chief_complaint = case_data.chief_complaint
+            db_case.category = case_data.category
+            db_case.hidden_record = hidden_record_str
+            db.commit()
+        except Exception as db_err:
+            db.rollback()
+            print(f"Error syncing to SQLite DB in create_case: {db_err}")
+        finally:
+            db.close()
+        
         # Reload global cache
         all_cases = collection.get()
         return {"status": "success", "message": f"Case {case_data.id} saved successfully."}
@@ -174,13 +417,28 @@ async def create_case(case_data: CaseCreateRequest):
 async def delete_case(case_id: str):
     global all_cases
     try:
-        if collection is None:
-            return {"status": "error", "message": "Database not initialized"}
+        # 1. Delete from ChromaDB
+        if collection is not None:
+            try:
+                collection.delete(ids=[case_id])
+            except Exception as e:
+                print(f"ChromaDB delete error for case {case_id}: {e}")
+                
+        # 2. Delete from SQLite Relational Database
+        db = SessionLocal()
+        try:
+            db.query(DB_Case).filter(DB_Case.id == case_id).delete()
+            db.commit()
+        except Exception as db_err:
+            db.rollback()
+            print(f"SQLite delete error for case {case_id}: {db_err}")
+        finally:
+            db.close()
             
-        collection.delete(ids=[case_id])
-        
         # Reload global cache
-        all_cases = collection.get()
+        if collection is not None:
+            all_cases = collection.get()
+            
         return {"status": "success", "message": f"Case {case_id} deleted successfully."}
     except Exception as e:
         print(f"Error deleting case: {e}")
@@ -188,39 +446,84 @@ async def delete_case(case_id: str):
 
 @app.get("/api/sessions")
 async def get_sessions():
+    db = SessionLocal()
     try:
-        session_ids = list_sessions()
+        sessions = db.query(DB_Session).order_by(DB_Session.updated_at.desc()).all()
         sessions_list = []
-        for s_id in session_ids:
-            data = load_session(s_id)
-            if data:
-                history = data.get('history', [])
-                user_turns = len([msg for msg in history if msg.get('role') == 'user'])
-                
-                eval_data = data.get('evaluation', {})
-                score = eval_data.get('total_score') if isinstance(eval_data, dict) else None
-                
-                sessions_list.append({
-                    "session_id": s_id,
-                    "created_at": data.get('created_at', ''),
-                    "updated_at": data.get('updated_at', ''),
-                    "scenario_name": data.get('case_data', {}).get('scenario_name', 'Unknown'),
-                    "turns": user_turns,
-                    "status": data.get('status', 'active'),
-                    "score": score
-                })
-        sessions_list.sort(key=lambda x: x.get('updated_at', ''), reverse=True)
+        for s in sessions:
+            sessions_list.append({
+                "session_id": s.session_id,
+                "student_id": s.student_id,
+                "student_name": s.student_name,
+                "created_at": s.created_at.isoformat() if s.created_at else '',
+                "updated_at": s.updated_at.isoformat() if s.updated_at else '',
+                "scenario_name": s.scenario_name or 'สุ่มเคส',
+                "turns": s.turns,
+                "status": s.status,
+                "score": s.score
+            })
         return sessions_list
     except Exception as e:
         print(f"Error listing sessions: {e}")
         return []
+    finally:
+        db.close()
 
 @app.get("/api/sessions/{session_id}")
 async def get_session_detail(session_id: str):
-    data = load_session(session_id)
+    data = load_session_from_sqlite(session_id)
     if not data:
         return {"status": "error", "message": "Session not found"}
     return data
+
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: str):
+    db = SessionLocal()
+    try:
+        # Delete related dialogue transcript records
+        db.query(DB_Dialogue).filter(DB_Dialogue.session_id == session_id).delete()
+        # Delete main session record
+        db.query(DB_Session).filter(DB_Session.session_id == session_id).delete()
+        db.commit()
+        
+        # Evict from in-memory cache
+        chat_sessions.pop(session_id, None)
+        
+        return {"status": "success", "message": f"Session {session_id} deleted successfully."}
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting session {session_id}: {e}")
+        return {"status": "error", "message": str(e)}
+    finally:
+        db.close()
+
+@app.get("/api/history/{student_id}")
+async def get_student_history(student_id: str):
+    db = SessionLocal()
+    try:
+        sessions = db.query(DB_Session).filter(
+            DB_Session.student_id == student_id
+        ).order_by(DB_Session.updated_at.desc()).all()
+        
+        history_list = []
+        for s in sessions:
+            eval_data = json.loads(s.evaluation_json) if s.evaluation_json else None
+            history_list.append({
+                "session_id": s.session_id,
+                "scenario_name": s.scenario_name,
+                "turns": s.turns,
+                "score": s.score,
+                "status": s.status,
+                "created_at": s.created_at.isoformat() if s.created_at else '',
+                "updated_at": s.updated_at.isoformat() if s.updated_at else '',
+                "evaluation": eval_data
+            })
+        return history_list
+    except Exception as e:
+        print(f"Error fetching history for {student_id}: {e}")
+        return []
+    finally:
+        db.close()
 
 @app.get("/api/cases")
 async def list_cases():
@@ -271,24 +574,49 @@ async def websocket_endpoint(websocket: WebSocket):
             if not session_id or not student_text:
                 continue
 
-            if session_id not in chat_sessions:
-                # Retrieve selected case ID parameter if sent by Selective Mode
-                selected_case_id = request_data.get("case_id")
-                if selected_case_id:
-                    case_data = get_case_by_id(selected_case_id)
-                else:
-                    case_data = get_random_case()
+            student_id = request_data.get("student_id") or "guest_student"
+            student_name = request_data.get("student_name") or "Guest Student"
 
-                chat_sessions[session_id] = {
-                    'session_id': session_id,
-                    'history': [],
-                    'case_data': case_data,
-                    'revealed_info': {},
-                    'status': 'active'
-                }
-                save_session(session_id, chat_sessions[session_id])
+            if session_id not in chat_sessions:
+                loaded_sess = load_session_from_sqlite(session_id)
+                if loaded_sess:
+                    chat_sessions[session_id] = loaded_sess
+                    chat_sessions[session_id]['student_id'] = student_id
+                    chat_sessions[session_id]['student_name'] = student_name
+                else:
+                    selected_case_id = request_data.get("case_id")
+                    if selected_case_id:
+                        case_data = get_case_by_id(selected_case_id)
+                    else:
+                        case_data = get_random_case()
+
+                    chat_sessions[session_id] = {
+                        'session_id': session_id,
+                        'student_id': student_id,
+                        'student_name': student_name,
+                        'history': [],
+                        'case_data': case_data,
+                        'revealed_info': {},
+                        'status': 'active',
+                        'created_at': datetime.now().isoformat()
+                    }
+                    save_session_to_sqlite(chat_sessions[session_id])
                 
             session_data = chat_sessions[session_id]
+            
+            # --- Session-Level Rate Limiter (Max 30 user queries) ---
+            user_msg_count = len([msg for msg in session_data['history'] if msg.get('role') == 'user'])
+            if user_msg_count >= 30:
+                await websocket.send_text("🤕 (ระบบจำลอง: ครบข้อจำกัด 30 คำถามสำหรับรอบประเมินนี้แล้ว กรุณากดปุ่ม 'จบการซักประวัติ' ด้านล่างเพื่อทำการประเมินคะแนนทันที)")
+                await websocket.send_text("__END__")
+                continue
+
+            # Calculate warning text if reaching limit
+            warning_suffix = ""
+            if user_msg_count == 24: # This is the 25th query
+                warning_suffix = "\n\n⚠️ (ระบบจำลอง: คุณถามคำถามไปแล้ว 25 ข้อความ เหลือโควต้าอีก 5 ข้อความสำหรับรอบสอบนี้)"
+            elif user_msg_count == 29: # This is the 30th query
+                warning_suffix = "\n\n⚠️ (ระบบจำลอง: คุณคุยครบ 30 คำถามและนี่เป็นข้อความสุดท้ายในรอบการทดสอบนี้)"
             
             # Check for termination signal
             if student_text == "__END_SESSION__":
@@ -364,6 +692,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     directives_str = "\n".join([f"- {text}" for text in directives])
                     system_prompt += f"\n\n[ข้อบังคับทางอารมณ์และพฤติกรรมในขณะนี้]\n{directives_str}"
 
+            # Append student's custom clinical behavioral booster instructions if present
+            additional_instructions = client_config.get("additional_instructions")
+            if additional_instructions:
+                system_prompt += f"\n\n[คำสั่งและพฤติกรรมเสริมคนไข้เพิ่มเติม]:\n- {additional_instructions}"
+
             messages_to_send = [{'role': 'system', 'content': system_prompt}]
             
             # --- Sliding Context Window (Pruning active chat history) ---
@@ -382,6 +715,13 @@ async def websocket_endpoint(websocket: WebSocket):
             # --- Multi-Tier API Routing (Free vs. Paid) ---
             api_tier = client_config.get("api_tier") or client_config.get("apiTier") or "free"
             
+            if api_tier == "paid":
+                # Check student daily cloud quota (max 50 messages/day)
+                has_quota = check_and_increment_quota(student_id, max_limit=50)
+                if not has_quota:
+                    await websocket.send_text("⚠️ (ระบบคลาวด์ระงับ: โควต้าใช้งาน Typhoon รายวันของคุณเต็มแล้ว (50 ข้อความ/วัน) ระบบจึงปรับเข้าสู่การรันโลคอล Ollama แทนโดยอัตโนมัติ)\n\n")
+                    api_tier = "free"
+
             if api_tier == "paid":
                 # Determine which Cloud provider key is active
                 has_typhoon = TYPHOON_API_KEY and TYPHOON_API_KEY != "your_typhoon_api_key_here"
@@ -403,7 +743,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 "Content-Type": "application/json"
                             }
                             payload = {
-                                "model": "typhoon-v1.5-instruct", # Optimized high-intelligence Thai model
+                                "model": "typhoon-v2.5-30b-a3b-instruct", # Optimized latest high-intelligence Thai model
                                 "messages": messages_to_send,
                                 "temperature": temperature,
                                 "stream": True
@@ -412,6 +752,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         else:
                             # Route to OpenAI API
                             url = "https://api.openai.com/v1/chat/completions"
+
                             headers = {
                                 "Authorization": f"Bearer {OPENAI_API_KEY}",
                                 "Content-Type": "application/json"
@@ -446,6 +787,9 @@ async def websocket_endpoint(websocket: WebSocket):
                                         except Exception:
                                             continue
                                             
+                                if warning_suffix:
+                                    await websocket.send_text(warning_suffix)
+                                    full_reply += warning_suffix
                                 session_data['history'].append({'role': 'assistant', 'content': full_reply})
                     except Exception as cloud_err:
                         print(f"Cloud API execution error: {cloud_err}")
@@ -470,6 +814,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         full_reply += text
                         await websocket.send_text(text)
                         
+                    if warning_suffix:
+                        await websocket.send_text(warning_suffix)
+                        full_reply += warning_suffix
                     session_data['history'].append({'role': 'assistant', 'content': full_reply})
                 except Exception as ollama_err:
                     print(f"Ollama execution error: {ollama_err}")
@@ -477,8 +824,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(err_msg)
                     session_data['history'].append({'role': 'assistant', 'content': err_msg})
             
-            # Auto-save after response
-            save_session(session_id, session_data)
+            # Auto-save after response to SQLite
+            save_session_to_sqlite(session_data)
             await websocket.send_text("__END__")
 
     except WebSocketDisconnect:
@@ -488,7 +835,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get("/api/evaluate/{session_id}")
 async def get_evaluation(session_id: str):
-    session_data = load_session(session_id)
+    session_data = load_session_from_sqlite(session_id)
     if not session_data:
         return {"error": "Session not found"}
     
@@ -500,7 +847,7 @@ async def get_evaluation(session_id: str):
     result = await evaluate_session(session_data)
     if result:
         session_data['evaluation'] = result
-        save_session(session_id, session_data)
+        save_session_to_sqlite(session_data)
         return result
     
     return {"error": "Evaluation failed"}

@@ -66,13 +66,108 @@
     </div>
 
     <!-- Inject the Embeddable Instructor Admin Dashboard Plugin -->
+    <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; max-width: 900px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); box-sizing: border-box; margin-bottom: 20px; font-family: sans-serif;">
+        <div style="font-weight: bold; font-size: 15px; color: #60a5fa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            🛠️ กล่องจำลองระบบโฮสต์อาจารย์ (Instructor Identity Simulator)
+        </div>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 15px; line-height: 1.4;">
+            สำหรับผู้ประเมินหรืออาจารย์ ระบบต้องการสิทธิ์ `instructor-id` หรือบทบาท `role: admin` ผ่านเว็บโฮสต์เพื่อปลดล็อคการเข้าถึง จัดการเคส และดูสถิติการสอบ:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button onclick="simulateInstructor('ins_007', 'ศาสตราจารย์ นพ. สมศักดิ์')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                👨‍🏫 ศ.นพ. สมศักดิ์ (ins_007)
+            </button>
+            <button onclick="simulateInstructorAdmin()" style="background: #059669; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                🔑 จำลองด้วยสิทธิ์ Admin Role
+            </button>
+            <button onclick="clearInstructorAuth()" style="background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                🔒 จำลองสิทธิ์ว่าง (ทดสอบหน้าจอล็อค)
+            </button>
+        </div>
+        <div id="current-admin-status" style="font-size: 11px; margin-top: 12px; color: #a7f3d0; background: rgba(5, 150, 105, 0.15); padding: 6px 10px; border-radius: 4px; display: none;">
+            <!-- Status text -->
+        </div>
+    </div>
+
+    <!-- Inject the Embeddable Instructor Admin Dashboard Plugin -->
     <ai-patient-admin id="my-admin"></ai-patient-admin>
 
     <script>
         const adminComponent = document.getElementById('my-admin');
+        const statusDiv = document.getElementById('current-admin-status');
         const serverUrl = window.location.origin;
         adminComponent.setAttribute('server-url', serverUrl);
+
+        function updateAdminUI(id, role) {
+            if (id || role) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `🟢 <b>สถานะล็อกอินผู้ประเมิน:</b> ID: <code>${id || 'N/A'}</code> | Role: <b>${role || 'instructor'}</b>`;
+                statusDiv.style.color = '#a7f3d0';
+                statusDiv.style.background = 'rgba(5, 150, 105, 0.15)';
+            } else {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `🔴 <b>สถานะล็อกอิน:</b> ไม่มี (ระบบจะถูกบล็อกการเข้าด้วย Locked Gate Screen สีน้ำเงินเข้ม)`;
+                statusDiv.style.color = '#fca5a5';
+                statusDiv.style.background = 'rgba(220, 38, 38, 0.15)';
+            }
+        }
+
+        function simulateInstructor(id, name) {
+            sessionStorage.setItem('osce_instructor_id', id);
+            sessionStorage.setItem('osce_instructor_name', name);
+            sessionStorage.setItem('osce_role', 'instructor');
+            
+            adminComponent.setAttribute('instructor-id', id);
+            adminComponent.setAttribute('role', 'instructor');
+            
+            updateAdminUI(id, 'instructor');
+            
+            if (typeof adminComponent.checkAuthentication === 'function') {
+                adminComponent.checkAuthentication();
+            }
+        }
+
+        function simulateInstructorAdmin() {
+            sessionStorage.setItem('osce_instructor_id', 'ins_admin');
+            sessionStorage.setItem('osce_role', 'admin');
+            
+            adminComponent.setAttribute('instructor-id', 'ins_admin');
+            adminComponent.setAttribute('role', 'admin');
+            
+            updateAdminUI('ins_admin', 'admin');
+            
+            if (typeof adminComponent.checkAuthentication === 'function') {
+                adminComponent.checkAuthentication();
+            }
+        }
+
+        function clearInstructorAuth() {
+            sessionStorage.removeItem('osce_instructor_id');
+            sessionStorage.removeItem('osce_instructor_name');
+            sessionStorage.removeItem('osce_role');
+            localStorage.removeItem('osce_instructor_id');
+            localStorage.removeItem('osce_instructor_name');
+            localStorage.removeItem('osce_role');
+            
+            adminComponent.removeAttribute('instructor-id');
+            adminComponent.removeAttribute('role');
+            
+            updateAdminUI(null, null);
+            
+            if (typeof adminComponent.checkAuthentication === 'function') {
+                adminComponent.checkAuthentication();
+            }
+        }
+
+        // Initialize status UI on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedId = sessionStorage.getItem('osce_instructor_id') || adminComponent.getAttribute('instructor-id');
+            const savedRole = sessionStorage.getItem('osce_role') || adminComponent.getAttribute('role');
+            updateAdminUI(savedId, savedRole);
+        });
+
         console.log("OSCE Instructor Admin Widget loaded successfully.");
     </script>
 </body>
 </html>
+

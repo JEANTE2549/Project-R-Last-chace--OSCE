@@ -53,16 +53,99 @@
     </div>
 
     <!-- Inject the Embeddable AI Patient Simulator Widget Plugin -->
+    <div style="background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; max-width: 600px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); box-sizing: border-box; margin-bottom: 20px; font-family: sans-serif;">
+        <div style="font-weight: bold; font-size: 15px; color: #60a5fa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+            🛠️ กล่องจำลองระบบโฮสต์หลัก (Client Identity Simulator)
+        </div>
+        <div style="font-size: 12px; color: #94a3b8; margin-bottom: 15px; line-height: 1.4;">
+            เนื่องจากระบบ OSCE Simulator เป็นแบบ <b>Production-Grade Plugin</b> ที่รองรับการรับสิทธิ์ยืนยันตัวตนผ่านเว็บโฮสต์โดยตรง คุณสามารถทดสอบสภาวะต่างๆ ได้ผ่านปุ่มลัดด้านล่างนี้:
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button onclick="simulateStudent('std_001', 'นศ.พ. สมชาย รักดี')" style="background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                👨‍⚕️ นศ.พ. สมชาย (std_001)
+            </button>
+            <button onclick="simulateStudent('std_002', 'นศ.พ. หญิง สมศรี ทรงเรียน')" style="background: #059669; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                👩‍⚕️ นศ.พ. สมศรี (std_002)
+            </button>
+            <button onclick="clearStudentAuth()" style="background: #dc2626; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: sans-serif !important; border: none !important;">
+                🔒 จำลองสิทธิ์ว่าง (ทดสอบหน้าจอล็อค)
+            </button>
+        </div>
+        <div id="current-auth-status" style="font-size: 11px; margin-top: 12px; color: #a7f3d0; background: rgba(5, 150, 105, 0.15); padding: 6px 10px; border-radius: 4px; display: none;">
+            <!-- Status text -->
+        </div>
+    </div>
+
+    <!-- Inject the Embeddable AI Patient Simulator Widget Plugin -->
     <ai-patient-simulator id="my-simulator"></ai-patient-simulator>
 
     <script>
-        // Optional SDK dynamic programmatic initialization
         const simulator = document.getElementById('my-simulator');
+        const statusDiv = document.getElementById('current-auth-status');
         
         // Dynamically match the current protocol-aware websocket connection
         const serverUrl = window.location.origin;
         simulator.setAttribute('server-url', serverUrl);
-        
+
+        function updateStatusUI(id, name) {
+            if (id) {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `🟢 <b>สถานะการล็อกอินที่จำลองอยู่:</b> ID: <code>${id}</code> | ชื่อ: <b>${name}</b>`;
+                statusDiv.style.color = '#a7f3d0';
+                statusDiv.style.background = 'rgba(5, 150, 105, 0.15)';
+            } else {
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = `🔴 <b>สถานะล็อกอิน:</b> ไม่มี (ระบบจะถูกบล็อกการเข้าถึงด้วย Locked Gate Screen)`;
+                statusDiv.style.color = '#fca5a5';
+                statusDiv.style.background = 'rgba(220, 38, 38, 0.15)';
+            }
+        }
+
+        function simulateStudent(id, name) {
+            // Write to sessionStorage to satisfy the Hybrid authentication check
+            sessionStorage.setItem('osce_student_id', id);
+            sessionStorage.setItem('osce_student_name', name);
+            sessionStorage.setItem('osce_student_token', 'dev_token_example');
+
+            // Also set attributes to trigger attributeChangedCallback
+            simulator.setAttribute('student-id', id);
+            simulator.setAttribute('student-name', name);
+            simulator.setAttribute('token', 'dev_token_example');
+            
+            updateStatusUI(id, name);
+            
+            // Reload/recheck auth on widget
+            if (typeof simulator.checkAuthentication === 'function') {
+                simulator.checkAuthentication();
+            }
+        }
+
+        function clearStudentAuth() {
+            sessionStorage.removeItem('osce_student_id');
+            sessionStorage.removeItem('osce_student_name');
+            sessionStorage.removeItem('osce_student_token');
+            localStorage.removeItem('osce_student_id');
+            localStorage.removeItem('osce_student_name');
+            
+            simulator.removeAttribute('student-id');
+            simulator.removeAttribute('student-name');
+            simulator.removeAttribute('token');
+            
+            updateStatusUI(null, null);
+
+            // Force reload widget or re-check auth to show lock screen
+            if (typeof simulator.checkAuthentication === 'function') {
+                simulator.checkAuthentication();
+            }
+        }
+
+        // Initialize status on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedId = sessionStorage.getItem('osce_student_id') || simulator.getAttribute('student-id');
+            const savedName = sessionStorage.getItem('osce_student_name') || simulator.getAttribute('student-name');
+            updateStatusUI(savedId, savedName);
+        });
+
         console.log("OSCE AI Patient Simulator initialized successfully via embeddable Web Component.");
     </script>
 </body>
