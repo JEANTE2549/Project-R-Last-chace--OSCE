@@ -1022,13 +1022,7 @@ class AIPatientSimulator extends HTMLElement {
         this.closeDrawerBtn.addEventListener('click', () => this.closeDrawer());
         this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
         
-        // Guidebook modal listeners
-        this.openGuidebookBtn.addEventListener('click', () => {
-            this.guidebookModal.style.display = 'flex';
-        });
-        this.closeGuidebookBtn.addEventListener('click', () => {
-            this.guidebookModal.style.display = 'none';
-        });
+
         
         // Portal Event listeners
         this.blindOsceBtn.addEventListener('click', () => this.startSimulationWithCase(null));
