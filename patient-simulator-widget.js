@@ -641,26 +641,29 @@ class AIPatientSimulator extends HTMLElement {
             
             <!-- Pre-Encounter Entry Portal -->
             <div id="portal-screen" style="display: none;">
-                <div class="portal-title">🏥 แพลตฟอร์มจำลองคนไข้ซักประวัติ (OSCE)</div>
+                <div class="portal-title">ระบบจำลองสถานการณ์คนไข้ซักประวัติ (OSCE Practice Platform)</div>
                 
                 <!-- Premium Model Inference Selector inside Portal -->
                 <div class="portal-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
                     <label for="portal-tier-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                        🤖 เลือกโมเดลประมวลผล (AI Model Select)
+                        ระบบประมวลผลปัญญาประดิษฐ์ (AI Inference Selector)
                     </label>
-                    <select id="portal-tier-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600;">
-                        <option value="free">💻 รันในเครื่อง (Local Ollama) - รันฟรี / ปลอดภัย</option>
-                        <option value="paid">☁️ คลาวด์อัจฉริยะ (Typhoon AI) - ฉลาดสูงสุด / มีลิมิต</option>
+                    <select id="portal-tier-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
+                        <option value="free">ระบบประมวลผลในเครื่อง (Local Ollama) - ออฟไลน์ / ส่วนตัว</option>
+                        <option value="paid">ระบบประมวลผลคลาวด์ภาษาไทย (Typhoon AI) - ความแม่นยำสูง</option>
                     </select>
-                    <span style="font-size: 11px; color: #64748b; display: block; margin-top: 6px; line-height: 1.4;">
+                    <button id="open-guidebook-btn" style="background-color: #334155; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                        คู่มือการติดตั้งระบบประมวลผลโลคอล...
+                    </button>
+                    <span style="font-size: 11px; color: #64748b; display: block; margin-top: 8px; line-height: 1.4;">
                         *หมายเหตุ: คลาวด์ Typhoon มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
                     </span>
                 </div>
 
-                <!-- 🎭 Patient Persona Bank Card directly in student Portal screen -->
+                <!-- Patient Persona Bank Card directly in student Portal screen -->
                 <div class="portal-card" id="persona-bank-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
                     <label for="persona-preset-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                        🎭 คลังบุคลิกคนไข้และอารมณ์ (Patient Persona Bank)
+                        คลังข้อมูลบุคลิกและระดับอารมณ์คนไข้ (Patient Persona Bank)
                     </label>
                     <select id="persona-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
                         <!-- Options populated dynamically by JS -->
@@ -669,22 +672,22 @@ class AIPatientSimulator extends HTMLElement {
                         กำลังโหลดข้อมูลบุคลิก...
                     </div>
                     <button id="customize-persona-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
-                        ⚙️ ปรับแต่งคุณสมบัติบุคลิกนี้...
+                        ตั้งค่าคุณสมบัติระดับอารมณ์...
                     </button>
                     <button id="delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
-                        🗑️ ลบบุคลิกภาพนี้ออกจากคลัง
+                        ลบบุคลิกภาพออกจากระบบ
                     </button>
                 </div>
 
                 <div class="portal-btns-container">
                     <button id="blind-osce-btn" class="portal-btn" style="background-color: #0d6efd;">
-                        🎲 ซักประวัติสุ่มเคส (Blind Case)
+                        จำลองการสอบแบบสุ่มเคส (Blind Case Encounter)
                     </button>
                     <button id="select-syndrome-btn" class="portal-btn" style="background-color: #6c757d;">
-                        🩺 เลือกเคสโรคจำลอง (Selective Category)
+                        เลือกเคสโรคสำหรับฝึกฝน (Selective Categories)
                     </button>
                     <button id="view-history-btn" class="portal-btn" style="background-color: #198754;">
-                        📝 ประวัติการฝึกฝนของฉัน (My History)
+                        รายงานและประวัติการฝึกฝนย้อนหลัง (My Activity History)
                     </button>
                 </div>
             </div>
@@ -692,11 +695,11 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Student History Screen -->
             <div id="history-screen" style="display: none; padding: 10px;">
                 <div class="cases-header">
-                    <h3 style="margin: 0; color: #333;">📝 ประวัติการสอบและการฝึกฝนของคุณ</h3>
+                    <h3 style="margin: 0; color: #333;">ประวัติการสอบและการฝึกฝนของคุณ</h3>
                     <button id="history-back-btn" class="back-btn">ย้อนกลับ</button>
                 </div>
                 <div id="history-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
-                    ⏳ กำลังประมวลผลดึงประวัติการซักของคุณจากระบบ...
+                    กำลังประมวลผลดึงประวัติการซักของคุณจากระบบ...
                 </div>
                 <div id="history-list-container" class="cards-grid" style="grid-template-columns: 1fr; max-height: 400px; overflow-y: auto;">
                     <!-- Historical rows will be loaded dynamically here -->
@@ -705,13 +708,12 @@ class AIPatientSimulator extends HTMLElement {
 
             <!-- Pre-Exam Configuration Gate Modal -->
             <div id="pre-exam-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 29000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
-                <div class="auth-card" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(30, 41, 59, 0.95); max-width: 400px; text-align: left;">
-                    <div class="auth-icon" style="font-size: 48px; margin-bottom: 12px; text-align: center; display: block;">🩺</div>
+                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(30, 41, 59, 0.95); max-width: 400px; text-align: left;">
                     <div class="auth-title" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
                     
                     <div style="margin-bottom: 15px;">
                         <label for="pre-exam-preset-select" style="font-weight: bold; color: #cbd5e1; font-size: 14px; display: block; margin-bottom: 8px;">
-                            🎭 เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:
+                            เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:
                         </label>
                         <select id="pre-exam-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
                             <!-- Options populated dynamically by JS -->
@@ -720,10 +722,10 @@ class AIPatientSimulator extends HTMLElement {
                             กำลังโหลดรายละเอียดบุคลิกภาพ...
                         </div>
                         <button id="pre-exam-customize-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
-                            ⚙️ ปรับแต่งบุคลิกภาพก่อนสอบ...
+                            ปรับแต่งบุคลิกภาพก่อนสอบ...
                         </button>
                         <button id="pre-exam-delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
-                            🗑️ ลบบุคลิกภาพนี้ออกจากคลัง
+                            ลบบุคลิกภาพออกจากระบบ
                         </button>
                     </div>
 
@@ -737,7 +739,7 @@ class AIPatientSimulator extends HTMLElement {
             <!-- GGUF Parameter settings-drawer -->
             <div id="settings-drawer">
                 <div class="drawer-header">
-                    <h3 style="margin: 0; color: #333;">⚙️ ตั้งค่าระดับอารมณ์คนไข้จำลอง</h3>
+                    <h3 style="margin: 0; color: #333;">แผงตั้งค่าและจำลองการแสดงออกของคนไข้</h3>
                     <span id="close-drawer-btn" style="font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
                 </div>
                 
@@ -753,10 +755,10 @@ class AIPatientSimulator extends HTMLElement {
                     <input type="text" id="model-custom" value="llama3.1:latest" style="margin-top: 8px; display: none;">
                 </div>
                 <div class="form-group" style="display: none;">
-                    <label for="tier-select">🤖 เลือกโมเดลประมวลผล (AI Model Select)</label>
+                    <label for="tier-select">เลือกโมเดลประมวลผล (AI Model Select)</label>
                     <select id="tier-select">
-                        <option value="free">💻 รันในเครื่อง (Local Ollama)</option>
-                        <option value="paid">☁️ คลาวด์อัจฉริยะ (Typhoon AI)</option>
+                        <option value="free">ระบบประมวลผลในเครื่อง (Local Ollama)</option>
+                        <option value="paid">ระบบประมวลผลคลาวด์ภาษาไทย (Typhoon AI)</option>
                     </select>
                 </div>
                 <div class="form-group" style="display: none;">
@@ -766,7 +768,7 @@ class AIPatientSimulator extends HTMLElement {
 
                 <!-- Dynamic Emotional Persona Settings Drawer Pane -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
-                    <label for="preset-select">🎭 เลือกแม่แบบบุคลิก (Preset)</label>
+                    <label for="preset-select">เลือกแม่แบบบุคลิกภาพ (Standard Presets)</label>
                     <select id="preset-select">
                         <option value="cooperative">ให้ความร่วมมือดี / ใจเย็น (Cooperative)</option>
                         <option value="normal">ปกติ (Normal)</option>
@@ -779,7 +781,7 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
 
                 <div class="form-group" id="emotion-sliders-group">
-                    <label>🔥 ระดับอารมณ์ความรู้สึกคนไข้</label>
+                    <label>ระดับการตอบสนองด้านอารมณ์พื้นฐาน</label>
                     
                     <div style="margin-bottom: 8px;">
                         <span style="font-size: 13px; color: #555;">ความโกรธ/ก้าวร้าว: <span id="anger-val" class="slider-val">0%</span></span>
@@ -797,7 +799,7 @@ class AIPatientSimulator extends HTMLElement {
                     </div>
                     
                     <div style="background: #e9ecef; padding: 8px; border-radius: 6px; font-size: 11px; color: #495057; margin-top: 10px;">
-                        ℹ️ <b>PAD Model Vectors:</b> 
+                        <b>PAD Model Vectors:</b> 
                         P: <span id="pad-p" style="font-weight: bold; color: #0d6efd;">1.00</span> | 
                         A: <span id="pad-a" style="font-weight: bold; color: #dc3545;">-0.50</span> | 
                         D: <span id="pad-d" style="font-weight: bold; color: #198754;">0.50</span>
@@ -805,15 +807,15 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
 
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px;">
-                    <label for="prompt-textarea">🧬 คำสั่งพฤติกรรมและอาการคนไข้เพิ่มเติม (Additional Instructions)</label>
+                    <label for="prompt-textarea">ข้อกำหนดพฤติกรรมและการแสดงออกเพิ่มเติม (Additional Behavior Instructions)</label>
                     <textarea id="prompt-textarea" placeholder="ระบุพฤติกรรมเสริม เช่น 'คนไข้ปากเบี้ยวเล็กน้อยเวลากล่าว', 'อ่อนแรงครึ่งซีก', หรือ 'มีความ sensitive ร้องไห้ง่ายมาก' เพื่อท้าทายทักษะการซักประวัติ"></textarea>
                     <span style="font-size: 11px; color: #888;">*หมายเหตุ: คำสั่งนี้จะส่งไปช่วยเสริมพฤติกรรมการแสดงออกของคนไข้สมมติ โดยไม่รบกวนบทยืนยันอาการหลักของเคสแพทย์จำลอง*</span>
                 </div>
 
-                <!-- 💾 Save to Bank Box -->
+                <!-- Save to Bank Box -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #334155;">
-                        <input type="checkbox" id="save-to-bank-checkbox"> 💾 บันทึกเก็บลงในคลังบุคลิกภาพ (Save to Bank)
+                        <input type="checkbox" id="save-to-bank-checkbox"> บันทึกการปรับจูนลงในคลังเก็บข้อมูลส่วนตัว (Save Configuration to Bank)
                     </label>
                     
                     <div id="bank-input-group" style="display: none; margin-top: 10px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
@@ -821,7 +823,7 @@ class AIPatientSimulator extends HTMLElement {
                         <input type="text" id="bank-persona-name" class="form-control" placeholder="เช่น หงุดหงิดเจ็บแผลรุนแรง..." style="margin-bottom: 10px; background-color: white; border: 1px solid #cbd5e1; color: #334155; width: 100%; box-sizing: border-box; padding: 8px 12px; border-radius: 6px;">
                         
                         <div id="bank-replace-section" style="display: none; margin-top: 10px;">
-                            <span style="font-size: 12px; color: #e11d48; font-weight: bold; display: block; margin-bottom: 6px;">⚠️ คลังเต็มแล้ว (จำกัดสูงสุด 5 บุคลิก) กรุณาเลือกบุคลิกที่จะถูกเขียนทับแทนที่:</span>
+                            <span style="font-size: 12px; color: #e11d48; font-weight: bold; display: block; margin-bottom: 6px;">[คำเตือน] คลังเต็มแล้ว (จำกัดสูงสุด 5 บุคลิก) กรุณาเลือกบุคลิกที่จะถูกเขียนทับแทนที่:</span>
                             <div id="bank-replace-radios" style="display: flex; flex-direction: column; gap: 6px;">
                                 <!-- Dynamically generated radio buttons -->
                             </div>
@@ -836,9 +838,8 @@ class AIPatientSimulator extends HTMLElement {
 
             <!-- Disclaimer Warning Modal -->
             <div id="disclaimer-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
-                <div class="auth-card" style="border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(30, 41, 59, 0.95); max-width: 360px;">
-                     <div class="auth-icon" style="font-size: 48px; margin-bottom: 12px;">💎</div>
-                    <div class="auth-title" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 18px;">ข้อกำหนดการใช้ Cloud AI (Typhoon)</div>
+                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(30, 41, 59, 0.95); max-width: 360px;">
+                    <div class="auth-title" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 18px;">ข้อตกลงและโควต้าการใช้งานระบบคลาวด์ (Cloud AI Quota)</div>
                     <div class="auth-desc" style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
                         คุณกำลังสลับไปเปิดใช้งานโมเดลภาษาไทยอัจฉริยะในคลาวด์ ซึ่งมีข้อจำกัดด้านโควต้าทรัพยากร:<br>
                         • จำกัดคำถามสูงสุด <b>30 ข้อความต่อหนึ่งรอบสอบ</b><br>
@@ -855,28 +856,28 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Specific Syndrome case selection cards grid -->
             <div id="cases-grid-screen" style="display: none;">
                 <div class="cases-header">
-                    <h3 style="margin: 0; color: #333;">🩺 เลือกเคสคนไข้จำลอง</h3>
+                    <h3 style="margin: 0; color: #333;">เลือกเคสคนไข้จำลอง</h3>
                     <button id="back-to-portal-btn" class="back-btn">ย้อนกลับ</button>
                 </div>
                 <div id="cases-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
-                    ⏳ กำลังประมวลผลดึงกลุ่มโรคเวกเตอร์...
+                    กำลังประมวลผลดึงกลุ่มโรคเวกเตอร์...
                 </div>
                 <div id="cases-cards-container" class="cards-grid">
                     <!-- Syndromes list cards dynamically loaded here -->
                 </div>
             </div>
             
-            <button id="settings-btn" title="ตั้งค่าอาการและอารมณ์คนไข้จำลอง" style="display: block;">⚙️</button>
+            <button id="settings-btn" title="ตั้งค่าอาการและอารมณ์คนไข้จำลอง" style="display: block; font-size: 14px; font-weight: bold; background-color: #334155; border-radius: 6px; padding: 6px 12px; border: none; color: white;">ตั้งค่าอารมณ์</button>
             <div class="widget-container" style="display: none;">
-                <h2>🩺 AI Patient Simulator</h2>
+                <h2>AI Patient Simulator (OSCE Practice Room)</h2>
                 <div id="chat-box"></div>
                 <div class="btn-container">
-                    <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">🏠 ยกเลิกและกลับหน้าแรก</button>
-                    <button id="mic-btn">🎤 คลิกเพื่อพูด</button>
-                    <button id="end-btn" style="background-color: #6c757d;">🏁 จบการซักประวัติ</button>
-                    <button id="new-btn" style="background-color: #198754; display: none;">🆕 เคสใหม่</button>
-                    <button id="view-eval-btn" style="background-color: #ffc107; color: #000; display: none;">📊 ดูผลการประเมิน</button>
-                    <button id="portal-btn" style="background-color: #0d6efd; display: none;">🏠 กลับหน้าแรก</button>
+                    <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">ยกเลิกการตรวจและกลับหน้าหลัก</button>
+                    <button id="mic-btn">เริ่มบันทึกเสียงพูด</button>
+                    <button id="end-btn" style="background-color: #6c757d;">เสร็จสิ้นการซักประวัติ (End Encounter)</button>
+                    <button id="new-btn" style="background-color: #198754; display: none;">เข้าตรวจคนไข้เคสใหม่</button>
+                    <button id="view-eval-btn" style="background-color: #ffc107; color: #000; display: none;">แสดงผลการประเมินความสามารถ (Show Evaluation)</button>
+                    <button id="portal-btn" style="background-color: #0d6efd; display: none;">กลับสู่หน้าหลัก</button>
                     <span id="status">กำลังเชื่อมต่อ...</span>
                 </div>
 
@@ -884,10 +885,9 @@ class AIPatientSimulator extends HTMLElement {
 
                 <!-- Local CORS Connection Setup Wizard -->
                 <div id="setup-wizard">
-                    <div class="wizard-icon">🔌</div>
-                    <div class="wizard-title">ตรวจไม่พบการเชื่อมต่อกับ Local AI</div>
+                    <div class="wizard-title">ตรวจไม่พบการเชื่อมต่อกับเซิร์ฟเวอร์หลังบ้าน</div>
                     <p style="font-size: 13px; color: #555; margin-bottom: 20px;">
-                        กรุณาตรวจสอบว่าเซิร์ฟเวอร์จำลองและ Ollama รันอยู่ในขณะนี้
+                        กรุณาตรวจสอบว่าเซิร์ฟเวอร์หลังบ้านและ Ollama รันอยู่ในเครื่องคอมพิวเตอร์ขณะนี้
                     </p>
                     
                     <div class="tab-container">
@@ -897,32 +897,32 @@ class AIPatientSimulator extends HTMLElement {
                     
                     <div id="instructions-win" style="display: block;">
                         <p style="font-size: 12px; text-align: left; margin: 5px 0;">1. เปิด PowerShell รันคำสั่งเปิด CORS สำหรับการเรียกใช้ในบราวเซอร์:</p>
-                        <div class="code-block">
+                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
                             $env:OLLAMA_ORIGINS="*"; ollama serve
-                            <button class="copy-btn" id="copy-win" data-code='$env:OLLAMA_ORIGINS="*"; ollama serve'>คัดลอก</button>
+                            <button class="copy-btn" id="copy-win" data-code='$env:OLLAMA_ORIGINS="*"; ollama serve' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
                         </div>
                         <p style="font-size: 12px; text-align: left; margin: 5px 0;">2. ในอีกหน้าต่าง ให้รันเซิร์ฟเวอร์ OSCE Backend:</p>
-                        <div class="code-block">
+                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
                             .venv\\Scripts\\activate; uvicorn main:app --reload
-                            <button class="copy-btn" id="copy-backend-win" data-code='.venv\\Scripts\\activate; uvicorn main:app --reload'>คัดลอก</button>
+                            <button class="copy-btn" id="copy-backend-win" data-code='.venv\\Scripts\\activate; uvicorn main:app --reload' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
                         </div>
                     </div>
                     
                     <div id="instructions-mac" style="display: none;">
                         <p style="font-size: 12px; text-align: left; margin: 5px 0;">1. เปิด Terminal รันคำสั่งเปิด CORS สำหรับการเรียกใช้ในบราวเซอร์:</p>
-                        <div class="code-block">
+                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
                             OLLAMA_ORIGINS="*" ollama serve
-                            <button class="copy-btn" id="copy-mac" data-code='OLLAMA_ORIGINS="*" ollama serve'>คัดลอก</button>
+                            <button class="copy-btn" id="copy-mac" data-code='OLLAMA_ORIGINS="*" ollama serve' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
                         </div>
                         <p style="font-size: 12px; text-align: left; margin: 5px 0;">2. ในอีกหน้าต่าง ให้รันเซิร์ฟเวอร์ OSCE Backend:</p>
-                        <div class="code-block">
+                        <div class="code-block" style="background: #212529; color: #f8f9fa; padding: 10px 15px; border-radius: 6px; font-family: 'Courier New', Courier, monospace; font-size: 12px; text-align: left; word-break: break-all; margin: 8px 0; position: relative;">
                             source .venv/bin/activate; uvicorn main:app --reload
-                            <button class="copy-btn" id="copy-backend-mac" data-code='source .venv/bin/activate; uvicorn main:app --reload'>คัดลอก</button>
+                            <button class="copy-btn" id="copy-backend-mac" data-code='source .venv/bin/activate; uvicorn main:app --reload' style="position: absolute; right: 8px; top: 6px; background: #6c757d; color: white; border: none; padding: 2px 6px; font-size: 10px; border-radius: 4px; cursor: pointer;">คัดลอก</button>
                         </div>
                     </div>
                     
                     <div style="margin-top: 25px;">
-                        <button id="retry-conn-btn" style="background-color: #dc3545; width: 100%; padding: 12px; font-weight: bold;">🔌 เชื่อมต่อใหม่อีกครั้ง</button>
+                        <button id="retry-conn-btn" style="background-color: #dc3545; width: 100%; padding: 12px; font-weight: bold;">พยายามเชื่อมต่อใหม่อีกครั้ง</button>
                     </div>
                 </div>
             </div>
@@ -931,7 +931,7 @@ class AIPatientSimulator extends HTMLElement {
             <div id="eval-modal">
                 <div class="modal-content">
                     <span class="close">&times;</span>
-                    <h2 style="text-align: center;">📊 ผลการประเมินการซักประวัติ</h2>
+                    <h2 style="text-align: center;">รายงานและประเมินผลการซักประวัติคนไข้</h2>
                     <div id="eval-results">
                         <!-- Results will be injected here -->
                     </div>
@@ -939,12 +939,79 @@ class AIPatientSimulator extends HTMLElement {
             </div>
             <!-- Access passcode gateway screen -->
             <div id="auth-gate-screen" class="auth-overlay" style="display: flex;">
-                <div class="auth-card" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(15, 23, 42, 0.9);">
-                    <div class="auth-icon" style="filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.4));">🏥</div>
+                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.95);">
                     <div class="auth-title" style="background: linear-gradient(135deg, #f87171, #ef4444); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 12px;">กรุณาเข้าสู่ระบบผ่านเว็บไซต์หลัก</div>
                     <div class="auth-desc" style="color: #cbd5e1; font-size: 14px; line-height: 1.6;">
                         ระบบตรวจไม่พบสิทธิ์และรหัสประจำตัวนักศึกษาของคุณ<br>
                         กรุณาล็อกอินเข้าสู่เว็บไซต์หลักของสถาบันเพื่อเรียกใช้งานเครื่องมือซักประวัติแพทย์จำลอง (OSCE)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local AI Guidebook Modal -->
+            <div id="guidebook-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 31000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white;">
+                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(30, 41, 59, 0.98); max-width: 480px; width: 100%; text-align: left; padding: 25px; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                    <h3 style="margin-top: 0; color: #60a5fa; border-bottom: 1px solid #475569; padding-bottom: 10px; font-size: 18px;">คู่มือติดตั้งระบบประมวลผลโลคอล (Local Ollama Setup)</h3>
+                    <div style="font-size: 12px; line-height: 1.6; color: #cbd5e1; max-height: 320px; overflow-y: auto; padding-right: 5px; box-sizing: border-box;">
+                        <p style="margin-top: 0;">เพื่อให้นักศึกษาสามารถเข้าใช้งานระบบจำลองแพทย์ผู้ป่วยผ่านหน่วยประมวลผลโลคอลส่วนตัว (Local Inference) โดยไม่เสียค่าใช้จ่ายและปลอดภัยจากการรั่วไหลของข้อมูล กรุณาดำเนินการตามขั้นตอนดังนี้:</p>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 1: ติดตั้งโปรแกรม Ollama</b>
+                            <p style="margin: 4px 0; color: #cbd5e1;">ดาวน์โหลดและติดตั้งโปรแกรมได้ที่ <a href="https://ollama.com" target="_blank" style="color: #60a5fa; text-decoration: underline; font-weight: bold;">https://ollama.com</a> สำหรับ Windows หรือ macOS ของท่าน</p>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 2: ติดตั้งโมเดลภาษาแพทย์มาตรฐาน</b>
+                            <p style="margin: 4px 0; color: #cbd5e1;">เปิด Terminal (macOS) หรือ PowerShell (Windows) และพิมพ์คำสั่งดังต่อไปนี้เพื่อดึงโมเดลภาษา Llama 3.1:</p>
+                            <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc; margin-top: 6px;">
+                                ollama run llama3.1
+                                <button class="copy-btn" data-code="ollama run llama3.1" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 3: เปิดเซิร์ฟเวอร์ Ollama พร้อมปลดล็อก CORS</b>
+                            <p style="margin: 4px 0; color: #cbd5e1;">บราวเซอร์ต้องการสิทธิ์ความปลอดภัยข้ามโดเมนในการเชื่อมต่อกับเซิร์ฟเวอร์ในเครื่อง:</p>
+                            
+                            <div style="margin-top: 8px;">
+                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ Windows PowerShell]</span>
+                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
+                                    $env:OLLAMA_ORIGINS="*"; ollama serve
+                                    <button class="copy-btn" data-code='$env:OLLAMA_ORIGINS="*"; ollama serve' style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 8px;">
+                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ macOS / Linux Terminal]</span>
+                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
+                                    OLLAMA_ORIGINS="*" ollama serve
+                                    <button class="copy-btn" data-code='OLLAMA_ORIGINS="*" ollama serve' style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 5px;">
+                            <b style="color: #f8fafc; font-size: 13px; display: block; margin-bottom: 4px;">ขั้นตอนที่ 4: สตาร์ทเซิร์ฟเวอร์หลังบ้านของแพลตฟอร์ม (FastAPI Backend)</b>
+                            <p style="margin: 4px 0; color: #cbd5e1;">รันคำสั่งเหล่านี้ตามประเภทระบบปฏิบัติการในคอมพิวเตอร์ของท่านเพื่อคุมข้อมูลข้อสอบและประเมินผล:</p>
+                            <div style="margin-top: 8px;">
+                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ Windows PowerShell]</span>
+                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
+                                    .venv\Scripts\activate; uvicorn main:app --reload
+                                    <button class="copy-btn" data-code=".venv\Scripts\activate; uvicorn main:app --reload" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
+                                </div>
+                            </div>
+                            <div style="margin-top: 8px;">
+                                <span style="font-weight: bold; font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">[สำหรับ macOS Terminal]</span>
+                                <div class="code-block" style="background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; position: relative; color: #f8fafc;">
+                                    source .venv/bin/activate; uvicorn main:app --reload
+                                    <button class="copy-btn" data-code="source .venv/bin/activate; uvicorn main:app --reload" style="position: absolute; right: 4px; top: 4px; padding: 2px 6px; font-size: 9px; background: #475569; border: none; border-radius: 4px; color: white; cursor: pointer;">คัดลอก</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button id="close-guidebook-btn" style="background: #475569; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; transition: background 0.2s;">ปิดหน้าต่างคู่มือ</button>
                     </div>
                 </div>
             </div>
@@ -1042,10 +1109,15 @@ class AIPatientSimulator extends HTMLElement {
         this.deletePersonaBtn = this.shadowDOM.getElementById('delete-persona-btn');
         this.preExamDeletePersonaBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
 
+        // Guidebook Elements
+        this.openGuidebookBtn = this.shadowDOM.getElementById('open-guidebook-btn');
+        this.closeGuidebookBtn = this.shadowDOM.getElementById('close-guidebook-btn');
+        this.guidebookModal = this.shadowDOM.getElementById('guidebook-modal');
+
         // Main Event listeners
         this.micBtn.addEventListener('click', () => this.toggleDictation());
         this.micBtn.style.backgroundColor = "#0d6efd"; // Standard Blue Mic Reset
-        this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
+        this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
         this.endBtn.addEventListener('click', () => this.endSimulation());
         this.newBtn.addEventListener('click', () => this.newSimulation());
         this.viewEvalBtn.addEventListener('click', () => this.showEvaluation());
@@ -1059,6 +1131,14 @@ class AIPatientSimulator extends HTMLElement {
         this.settingsBtn.addEventListener('click', () => this.openDrawer());
         this.closeDrawerBtn.addEventListener('click', () => this.closeDrawer());
         this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
+        
+        // Guidebook modal listeners
+        this.openGuidebookBtn.addEventListener('click', () => {
+            this.guidebookModal.style.display = 'flex';
+        });
+        this.closeGuidebookBtn.addEventListener('click', () => {
+            this.guidebookModal.style.display = 'none';
+        });
         
         // Portal Event listeners
         this.blindOsceBtn.addEventListener('click', () => this.startSimulationWithCase(null));
@@ -1134,17 +1214,17 @@ class AIPatientSimulator extends HTMLElement {
             this.connectWS();
         });
         
-        // Bind copy buttons inside wizard
+        // Bind copy buttons inside wizard and guidebook
         this.shadowDOM.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const code = e.target.getAttribute('data-code');
+                const code = btn.getAttribute('data-code');
                 navigator.clipboard.writeText(code).then(() => {
-                    const originalText = e.target.innerText;
-                    e.target.innerText = "✓ สำเร็จ";
-                    e.target.style.backgroundColor = "#198754";
+                    const originalText = btn.innerText;
+                    btn.innerText = "✓ สำเร็จ";
+                    btn.style.backgroundColor = "#198754";
                     setTimeout(() => {
-                        e.target.innerText = originalText;
-                        e.target.style.backgroundColor = "#6c757d";
+                        btn.innerText = originalText;
+                        btn.style.backgroundColor = "";
                     }, 1500);
                 });
             });
@@ -1389,7 +1469,7 @@ class AIPatientSimulator extends HTMLElement {
         this.customPrompt = this.promptTextarea.value;
         this.calculatePAD();
         
-        // 💾 Handle Persona Bank Saving Logic (Phase 4.2)
+        // Handle Persona Bank Saving Logic (Phase 4.2)
         if (this.saveToBankCheckbox.checked) {
             const nameInput = this.bankPersonaName.value.trim();
             if (!nameInput) {
@@ -1405,7 +1485,8 @@ class AIPatientSimulator extends HTMLElement {
                 anger: this.anger,
                 sadness: this.sadness,
                 happiness: this.happiness,
-                additional_instructions: this.promptTextarea.value
+                additional_instructions: this.promptTextarea.value,
+                student_id: this.studentId || 'guest'
             };
             
             if (list.length < 5) {
@@ -1441,7 +1522,7 @@ class AIPatientSimulator extends HTMLElement {
         
         // Flash a status message briefly
         const originalStatus = this.status.innerText;
-        this.status.innerText = "⚙️ ปรับจูนบุคลิกและระดับอารมณ์แล้ว!";
+        this.status.innerText = "ปรับจูนบุคลิกและระดับอารมณ์เรียบร้อยแล้ว";
         this.status.style.color = "#198754";
         setTimeout(() => {
             this.status.innerText = originalStatus;
@@ -1449,27 +1530,27 @@ class AIPatientSimulator extends HTMLElement {
         }, 1500);
     }
 
-    // --- 🎭 Dynamic Persona Bank & LocalStorage Handlers (Phase 4.2) ---
+    // --- Dynamic Persona Bank & LocalStorage Handlers ---
     loadPersonaBank() {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
         
         let html = `
-            <option value="cooperative">💻 แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
-            <option value="anxious">😰 คนไข้วิตกกังวลสูง (Anxious Preset)</option>
-            <option value="severe_pain">😫 คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
-            <option value="combative">😡 คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+            <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
+            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
+            <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
         `;
         
         if (list.length > 0) {
-            html += `<optgroup label="💾 บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
+            html += `<optgroup label="บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
             list.forEach(p => {
-                html += `<option value="custom_${p.id}">👤 ${p.name}</option>`;
+                html += `<option value="custom_${p.id}">${p.name}</option>`;
             });
             html += `</optgroup>`;
         }
         
         html += `
-            <option value="create_new">➕ ปรับแต่งบุคลิกใหม่...</option>
+            <option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>
         `;
         
         this.portalPresetSelect.innerHTML = html;
@@ -1544,22 +1625,22 @@ class AIPatientSimulator extends HTMLElement {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
         
         let html = `
-            <option value="cooperative">💻 แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
-            <option value="anxious">😰 คนไข้วิตกกังวลสูง (Anxious Preset)</option>
-            <option value="severe_pain">😫 คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
-            <option value="combative">😡 คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+            <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
+            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
+            <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
         `;
         
         if (list.length > 0) {
-            html += `<optgroup label="💾 บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
+            html += `<optgroup label="บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
             list.forEach(p => {
-                html += `<option value="custom_${p.id}">👤 ${p.name}</option>`;
+                html += `<option value="custom_${p.id}">${p.name}</option>`;
             });
             html += `</optgroup>`;
         }
         
         html += `
-            <option value="create_new">➕ ปรับแต่งบุคลิกใหม่...</option>
+            <option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>
         `;
         
         if (this.preExamPresetSelect) {
@@ -1633,11 +1714,18 @@ class AIPatientSimulator extends HTMLElement {
         const badge = this.shadowDOM.getElementById('pre-exam-summary-badge');
         if (!badge) return;
         
-        // Show/hide delete button depending on whether selected persona is custom
+        // Show/hide delete button depending on whether selected persona is custom and owned by current student
         const deleteBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
         if (deleteBtn) {
             if (selectedVal && selectedVal.startsWith('custom_')) {
-                deleteBtn.style.display = 'flex';
+                const id = selectedVal.replace('custom_', '');
+                const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+                const p = list.find(item => item.id === id);
+                if (p && (!p.student_id || p.student_id === this.studentId)) {
+                    deleteBtn.style.display = 'flex';
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
             } else {
                 deleteBtn.style.display = 'none';
             }
@@ -1672,7 +1760,10 @@ class AIPatientSimulator extends HTMLElement {
     }
 
     deleteSelectedPersona() {
-        const val = this.portalPresetSelect.value; 
+        let val = this.portalPresetSelect.value; 
+        if (this.preExamModal && this.preExamModal.style.display === 'flex') {
+            val = this.preExamPresetSelect.value;
+        }
         if (!val || !val.startsWith('custom_')) return;
         
         const id = val.replace('custom_', '');
@@ -1680,6 +1771,11 @@ class AIPatientSimulator extends HTMLElement {
         const persona = list.find(p => p.id === id);
         
         if (!persona) return;
+        
+        if (persona.student_id && persona.student_id !== this.studentId) {
+            alert("คุณไม่มีสิทธิ์ลบบุคลิกภาพนี้ เนื่องจากคุณไม่ได้เป็นผู้สร้าง!");
+            return;
+        }
         
         if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบบุคลิก "${persona.name}" ออกจากคลังถาวร?`)) {
             list = list.filter(p => p.id !== id);
@@ -1692,7 +1788,9 @@ class AIPatientSimulator extends HTMLElement {
             
             // Revert back to cooperative calm default
             this.portalPresetSelect.value = 'cooperative';
-            this.preExamPresetSelect.value = 'cooperative';
+            if (this.preExamPresetSelect) {
+                this.preExamPresetSelect.value = 'cooperative';
+            }
             this.handlePersonaChange();
         }
     }
@@ -1726,11 +1824,18 @@ class AIPatientSimulator extends HTMLElement {
         const selectedVal = this.portalPresetSelect.value;
         const badge = this.shadowDOM.getElementById('persona-summary-badge');
         
-        // Show/hide delete button depending on whether selected persona is custom
+        // Show/hide delete button depending on whether selected persona is custom and owned by current student
         const deleteBtn = this.shadowDOM.getElementById('delete-persona-btn');
         if (deleteBtn) {
             if (selectedVal && selectedVal.startsWith('custom_')) {
-                deleteBtn.style.display = 'flex';
+                const id = selectedVal.replace('custom_', '');
+                const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+                const p = list.find(item => item.id === id);
+                if (p && (!p.student_id || p.student_id === this.studentId)) {
+                    deleteBtn.style.display = 'flex';
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
             } else {
                 deleteBtn.style.display = 'none';
             }
@@ -1814,7 +1919,7 @@ class AIPatientSimulator extends HTMLElement {
             this.socket = new WebSocket(wsUrl);
 
             this.socket.onopen = () => {
-                this.status.innerText = "✅ ระบบพร้อมทำงาน...";
+                this.status.innerText = "ระบบพร้อมทำงาน...";
                 this.setupWizard.style.display = 'none';
             };
 
@@ -1826,13 +1931,13 @@ class AIPatientSimulator extends HTMLElement {
                         this.enqueueTTS(this.sentenceBuffer.trim());
                         this.sentenceBuffer = "";
                     }
-                    this.status.innerText = "✅ รอรับคำถามต่อไป...";
+                    this.status.innerText = "รอรับคำถามต่อไป...";
                     return;
                 }
 
                 // If receiving session closed notice
                 if (text.startsWith("Session saved.")) {
-                    this.status.innerText = "🏁 บันทึกประวัติเรียบร้อยแล้ว";
+                    this.status.innerText = "บันทึกประวัติเรียบร้อยแล้ว";
                     return;
                 }
 
@@ -1843,7 +1948,7 @@ class AIPatientSimulator extends HTMLElement {
                 if (!this.currentPatientMsgDiv) {
                     this.currentPatientMsgDiv = document.createElement('div');
                     this.currentPatientMsgDiv.className = 'msg patient';
-                    this.currentPatientMsgDiv.innerText = "🤕 ผู้ป่วย: ";
+                    this.currentPatientMsgDiv.innerText = "คนไข้: ";
                     this.chatBox.appendChild(this.currentPatientMsgDiv);
                 }
 
@@ -1859,17 +1964,17 @@ class AIPatientSimulator extends HTMLElement {
             };
 
             this.socket.onclose = () => {
-                this.status.innerText = "🔌 ดำเนินการเชื่อมต่อท้องถิ่นขัดข้อง...";
+                this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
                 this.setupWizard.style.display = 'block';
             };
             
             this.socket.onerror = () => {
-                this.status.innerText = "🔌 ดำเนินการเชื่อมต่อท้องถิ่นขัดข้อง...";
+                this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
                 this.setupWizard.style.display = 'block';
             };
         } catch (e) {
             console.error("WebSocket construction failed:", e);
-            this.status.innerText = "❌ ไม่สามารถเชื่อมต่อได้";
+            this.status.innerText = "ไม่สามารถเชื่อมต่อได้";
             this.setupWizard.style.display = 'block';
         }
     }
@@ -1890,8 +1995,8 @@ class AIPatientSimulator extends HTMLElement {
 
             this.recognition.onstart = () => {
                 this.isRecording = true;
-                this.status.innerText = "🔴 กำลังฟัง... (พูดจบแล้วคลิกปุ่มอีกครั้งเพื่อส่ง)";
-                this.micBtn.innerText = "🛑 คลิกเพื่อส่งคำถาม";
+                this.status.innerText = "ระบบกำลังรับเสียงซักประวัติ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
+                this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
                 this.micBtn.style.backgroundColor = "#dc3545";
                 
                 // Hide cancel button during recording
@@ -1901,7 +2006,7 @@ class AIPatientSimulator extends HTMLElement {
                 
                 this.tempMsgDiv = document.createElement('div');
                 this.tempMsgDiv.className = 'msg user';
-                this.tempMsgDiv.innerText = "👨‍⚕️ คุณ: ...";
+                this.tempMsgDiv.innerText = "แพทย์: ...";
                 this.chatBox.appendChild(this.tempMsgDiv);
                 this.chatBox.scrollTop = this.chatBox.scrollHeight;
                 this.currentPatientMsgDiv = null;
@@ -1914,13 +2019,13 @@ class AIPatientSimulator extends HTMLElement {
                     else interim_transcript += e.results[i][0].transcript;
                 }
                 if (this.tempMsgDiv) {
-                    this.tempMsgDiv.innerText = "👨‍⚕️ คุณ: " + final_transcript + interim_transcript;
+                    this.tempMsgDiv.innerText = "แพทย์: " + final_transcript + interim_transcript;
                 }
             };
 
             this.recognition.onend = () => {
                 this.isRecording = false;
-                this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
+                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
                 this.micBtn.style.backgroundColor = "#0d6efd";
 
                 if (final_transcript.trim() !== '') {
@@ -2026,11 +2131,11 @@ class AIPatientSimulator extends HTMLElement {
 
         html += `
             <div class="feedback-section">
-                <p class="strength">✅ จุดเด่น:</p>
+                <p class="strength">จุดเด่น:</p>
                 <ul>${strengths.map(s => `<li>${s}</li>`).join('')}</ul>
-                <p class="weakness">❌ จุดที่ควรพัฒนา:</p>
+                <p class="weakness">จุดที่ควรพัฒนา:</p>
                 <ul>${weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
-                <p>💡 <b>คำแนะนำเพิ่มเติม:</b> ${suggestion}</p>
+                <p><b>คำแนะนำเพิ่มเติม:</b> ${suggestion}</p>
             </div>
         `;
         return html;
@@ -2038,7 +2143,7 @@ class AIPatientSimulator extends HTMLElement {
 
     async showEvaluation() {
         this.evalModal.style.display = 'block';
-        this.evalResults.innerHTML = "<p style='text-align:center;'>⏳ กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
+        this.evalResults.innerHTML = "<p style='text-align:center;'>กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
 
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
@@ -2046,14 +2151,14 @@ class AIPatientSimulator extends HTMLElement {
             const data = await response.json();
 
             if (data.error) {
-                this.evalResults.innerHTML = `<p style='color:red;'>❌ เกิดข้อผิดพลาด: ${data.error}</p>`;
+                this.evalResults.innerHTML = `<p style='color:red;'>เกิดข้อผิดพลาด: ${data.error}</p>`;
                 return;
             }
 
             this.evalResults.innerHTML = this.renderEvaluationHTML(data);
         } catch (e) {
             console.error("Evaluation loading failed:", e);
-            this.evalResults.innerHTML = `<p style='color:red;'>❌ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อดึงข้อมูลประเมินได้</p>`;
+            this.evalResults.innerHTML = `<p style='color:red;'>ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อดึงข้อมูลประเมินได้</p>`;
         }
     }
 
@@ -2080,7 +2185,7 @@ class AIPatientSimulator extends HTMLElement {
             this.historyLoading.style.display = 'none';
             
             if (!historyList || historyList.length === 0) {
-                this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: #64748b;'>❌ ยังไม่มีประวัติการสอบประเมินของคุณในระบบ</p>";
+                this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: #64748b;'>ยังไม่มีประวัติการสอบประเมินของคุณในระบบ</p>";
                 return;
             }
             
@@ -2092,7 +2197,7 @@ class AIPatientSimulator extends HTMLElement {
                 card.style.alignItems = 'center';
                 
                 const timestamp = s.updated_at ? new Date(s.updated_at).toLocaleString('th-TH', { hour12: false }) : 'ไม่ระบุ';
-                const scoreText = s.score ? `⭐ ${s.score}/5` : '⏳ รอตรวจ';
+                const scoreText = s.score ? `คะแนน ${s.score}/5` : 'รอดำเนินการ';
                 const statusClass = s.status === 'completed' ? 'badge-general' : 'badge-abdomen';
                 const statusText = s.status === 'completed' ? 'เสร็จสิ้นการซัก' : 'ยังไม่จบการซัก';
                 
