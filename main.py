@@ -66,7 +66,18 @@ class DB_QuotaUsage(Base):
 
 Base.metadata.create_all(bind=engine)
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(title="AI Patient Simulator API")
+
+# Enable CORS for external client applications (e.g., hosted on GitHub Pages)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize Ollama client globally for better performance and reliability
 ollama_client = ollama.AsyncClient(host='http://127.0.0.1:11434')
