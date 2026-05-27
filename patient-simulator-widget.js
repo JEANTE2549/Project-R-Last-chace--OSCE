@@ -1246,7 +1246,9 @@ class AIPatientSimulator extends HTMLElement {
         this.currentPatientMsgDiv = null;
         this.ttsQueue = [];
         this.isSpeaking = false;
-        window.speechSynthesis.cancel();
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
         
         // Ensure settings drawer is closed/hidden to secure exam UI
         this.closeDrawer();
@@ -1759,7 +1761,9 @@ class AIPatientSimulator extends HTMLElement {
             this.socket.close();
             this.socket = null;
         }
-        window.speechSynthesis.cancel();
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
     }
 
     connectWS() {
@@ -1971,7 +1975,9 @@ class AIPatientSimulator extends HTMLElement {
         this.currentPatientMsgDiv = null;
         this.ttsQueue = [];
         this.isSpeaking = false;
-        window.speechSynthesis.cancel();
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
         
         if (this.mode === 'selective') {
             this.showScreen('portal');
@@ -2112,13 +2118,19 @@ class AIPatientSimulator extends HTMLElement {
         if (this.isSpeaking || this.ttsQueue.length === 0) return;
         this.isSpeaking = true;
         const text = this.ttsQueue.shift();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "th-TH";
-        utterance.onend = () => { 
-            this.isSpeaking = false; 
-            this.processTTSQueue(); 
-        };
-        window.speechSynthesis.speak(utterance);
+        if (typeof SpeechSynthesisUtterance !== 'undefined' && window.speechSynthesis) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = "th-TH";
+            utterance.onend = () => { 
+                this.isSpeaking = false; 
+                this.processTTSQueue(); 
+            };
+            window.speechSynthesis.speak(utterance);
+        } else {
+            console.warn("Web SpeechSynthesis is not supported on this device.");
+            this.isSpeaking = false;
+            this.processTTSQueue();
+        }
     }
 }
 
