@@ -69,6 +69,7 @@ class DB_QuotaUsage(Base):
 Base.metadata.create_all(bind=engine)
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="AI Patient Simulator API")
 
@@ -80,6 +81,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # Initialize Ollama client globally for better performance and reliability
 ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)

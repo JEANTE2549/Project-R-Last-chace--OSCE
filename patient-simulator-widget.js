@@ -117,13 +117,15 @@ class AIPatientSimulator extends HTMLElement {
                     max-width: 600px;
                     width: 100%;
                     margin: 40px auto;
-                    padding: 20px;
-                    background-color: #f4f7f6;
-                    color: #334155; /* Prevent white text leakage on light background */
-                    border-radius: 15px;
+                    padding: 24px;
+                    background-color: #f8fafc;
+                    color: #1e293b;
+                    border-radius: 16px;
                     box-sizing: border-box;
                     position: relative;
                     min-height: 520px;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
                 }
                 .widget-container {
                     width: 100%;
@@ -131,42 +133,207 @@ class AIPatientSimulator extends HTMLElement {
                 }
                 h2 {
                     text-align: center;
-                    color: #333;
+                    color: #1e3a8a;
                     margin-top: 0;
+                    font-weight: 800;
                     padding-right: 40px; /* Space for settings button */
                 }
                 
                 /* Selection Portal Screen Styles */
                 #portal-screen {
                     text-align: center;
-                    padding: 20px 10px;
+                    padding: 10px 5px;
                 }
                 .portal-title {
-                    font-size: 22px;
-                    color: #1a1e29;
-                    font-weight: bold;
+                    font-size: 20px;
+                    color: #1e3a8a;
+                    font-weight: 800;
                     margin-bottom: 25px;
+                    letter-spacing: -0.5px;
                 }
                 .portal-btns-container {
                     display: flex;
                     flex-direction: column;
-                    gap: 15px;
+                    gap: 12px;
                     max-width: 400px;
                     margin: 0 auto;
                 }
                 .portal-btn {
-                    padding: 18px 24px;
-                    font-size: 17px;
+                    padding: 16px 24px;
+                    font-size: 15px;
                     font-weight: bold;
                     border-radius: 12px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     gap: 10px;
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .portal-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+                }
+                .portal-btn:active {
+                    transform: translateY(0);
                 }
                 
-                /* Syndrome Case cards styles */
+                /* Avatar Scroll Bar & Cards */
+                .avatar-scroll-container {
+                    display: flex;
+                    gap: 15px;
+                    overflow-x: auto;
+                    padding: 10px 5px;
+                    margin-bottom: 15px;
+                    scrollbar-width: thin;
+                    -webkit-overflow-scrolling: touch;
+                }
+                .avatar-card {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    cursor: pointer;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    width: 85px;
+                    flex-shrink: 0;
+                    position: relative;
+                }
+                .avatar-img-wrapper {
+                    width: 65px;
+                    height: 65px;
+                    border-radius: 50%;
+                    background: #ffffff;
+                    padding: 3px;
+                    border: 2px solid #e2e8f0;
+                    transition: all 0.25s ease;
+                    position: relative;
+                }
+                .avatar-img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 50%;
+                    display: block;
+                }
+                .avatar-card:hover .avatar-img-wrapper {
+                    transform: translateY(-3px) scale(1.03);
+                    border-color: #cbd5e1;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+                }
+                .avatar-card.active .avatar-img-wrapper {
+                    transform: translateY(-3px) scale(1.05);
+                    border-color: #ea580c;
+                    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.25);
+                }
+                .avatar-label {
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-align: center;
+                    color: #64748b;
+                    margin-top: 6px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    width: 100%;
+                    transition: color 0.2s;
+                }
+                .avatar-card.active .avatar-label {
+                    color: #ea580c;
+                }
+                .delete-avatar-badge {
+                    position: absolute;
+                    top: -2px;
+                    right: -2px;
+                    width: 18px;
+                    height: 18px;
+                    background: #ea580c;
+                    color: white;
+                    border-radius: 50%;
+                    font-size: 11px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    border: 2px solid white;
+                    cursor: pointer;
+                    z-index: 5;
+                    transition: background 0.2s;
+                }
+                .delete-avatar-badge:hover {
+                    background: #c2410c;
+                }
+                
+                /* Custom Persona Details Panel */
+                .persona-details-panel {
+                    background: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 12px;
+                    padding: 16px;
+                    margin-bottom: 15px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.01);
+                    text-align: left;
+                }
+                .persona-name {
+                    font-size: 14px;
+                    font-weight: 800;
+                    color: #1e3a8a;
+                    margin-bottom: 4px;
+                }
+                .persona-desc {
+                    font-size: 12px;
+                    color: #475569;
+                    line-height: 1.5;
+                    margin-bottom: 12px;
+                }
+                .emotion-bars {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .emotion-row {
+                    display: flex;
+                    align-items: center;
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #64748b;
+                }
+                .emotion-label {
+                    width: 75px;
+                    flex-shrink: 0;
+                }
+                .emotion-bar-bg {
+                    flex-grow: 1;
+                    height: 6px;
+                    background: #f1f5f9;
+                    border-radius: 3px;
+                    overflow: hidden;
+                    position: relative;
+                }
+                .emotion-bar-fill {
+                    height: 100%;
+                    border-radius: 3px;
+                    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .emotion-bar-val {
+                    width: 35px;
+                    text-align: right;
+                    flex-shrink: 0;
+                    font-size: 11px;
+                    font-weight: bold;
+                    color: #475569;
+                }
+                .fill-happiness {
+                    background: #2563eb;
+                }
+                .fill-sadness {
+                    background: #94a3b8;
+                }
+                .fill-anger {
+                    background: #ea580c;
+                }
+                
+                /* Syndrome Case cards styles - Two Column List Layout */
                 #cases-grid-screen {
                     width: 100%;
                 }
@@ -175,22 +342,23 @@ class AIPatientSimulator extends HTMLElement {
                     justify-content: space-between;
                     align-items: center;
                     margin-bottom: 20px;
-                    border-bottom: 2px solid #ddd;
-                    padding-bottom: 10px;
+                    border-bottom: 1px solid #e2e8f0;
+                    padding-bottom: 12px;
                 }
                 .back-btn {
                     background: transparent;
-                    color: #0d6efd;
+                    color: #2563eb;
                     padding: 0;
                     font-size: 14px;
                     border: none;
                     cursor: pointer;
                     text-decoration: underline;
+                    font-weight: bold;
                 }
                 .cards-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-                    gap: 15px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
                     max-height: 420px;
                     overflow-y: auto;
                     padding: 5px;
@@ -198,80 +366,99 @@ class AIPatientSimulator extends HTMLElement {
                 .case-card {
                     background: white;
                     border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 15px;
+                    border-radius: 12px;
+                    padding: 16px 20px;
                     cursor: pointer;
-                    transition: all 0.25s ease;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                     text-align: left;
                     box-sizing: border-box;
                     display: flex;
-                    flex-direction: column;
+                    align-items: center;
                     justify-content: space-between;
+                    width: 100%;
+                    gap: 20px;
                 }
                 .case-card:hover {
-                    transform: translateY(-3px);
-                    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-                    border-color: #0d6efd;
+                    border-color: #2563eb;
+                    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.05);
+                    transform: translateY(-1px);
+                }
+                .case-card-left {
+                    width: 140px;
+                    flex-shrink: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                .case-card-right {
+                    flex-grow: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
                 }
                 .badge {
                     display: inline-block;
                     padding: 4px 8px;
-                    font-size: 10px;
+                    font-size: 9px;
                     font-weight: bold;
-                    border-radius: 12px;
-                    margin-bottom: 8px;
+                    border-radius: 8px;
                     text-transform: uppercase;
                     width: fit-content;
                 }
-                .badge-counseling { background-color: #cfe2ff; color: #0a58ca; }
-                .badge-abdomen { background-color: #f8d7da; color: #b02a37; }
-                .badge-general { background-color: #d1e7dd; color: #0f5132; }
-                .badge-fallback { background-color: #e2e8f0; color: #475569; }
+                .badge-counseling { background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+                .badge-abdomen { background-color: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; }
+                .badge-general { background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+                .badge-fallback { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
                 
                 .case-title {
-                    font-size: 15px;
-                    font-weight: bold;
+                    font-size: 14px;
+                    font-weight: 800;
                     color: #1e293b;
-                    margin: 0 0 8px 0;
+                    margin: 0;
                     line-height: 1.3;
                 }
                 .case-desc {
                     font-size: 12px;
-                    color: #64748b;
+                    color: #475569;
                     margin: 0;
-                    line-height: 1.4;
+                    line-height: 1.5;
                 }
 
                 #chat-box {
-                    background: white;
-                    border-radius: 10px;
+                    background: #ffffff;
+                    border-radius: 12px;
                     height: 400px;
                     overflow-y: auto;
-                    padding: 15px;
+                    padding: 20px;
                     margin-bottom: 20px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+                    border: 1px solid #e2e8f0;
                     box-sizing: border-box;
                 }
                 .msg {
                     margin-bottom: 15px;
-                    padding: 10px;
-                    border-radius: 10px;
+                    padding: 12px 16px;
+                    border-radius: 14px;
                     max-width: 80%;
-                    line-height: 1.4;
+                    line-height: 1.5;
+                    font-size: 14px;
                     word-wrap: break-word;
                     box-sizing: border-box;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
                 }
                 .user {
-                    background-color: #d1e7dd;
-                    color: #0f5132;
+                    background-color: #2563eb;
+                    color: white;
                     margin-left: auto;
-                    text-align: right;
+                    text-align: left;
+                    border-bottom-right-radius: 2px;
                 }
                 .patient {
-                    background-color: #f8d7da;
-                    color: #842029;
+                    background-color: #f1f5f9;
+                    color: #1e293b;
                     margin-right: auto;
+                    border-bottom-left-radius: 2px;
+                    border: 1px solid #e2e8f0;
                 }
                 .btn-container {
                     text-align: center;
@@ -281,29 +468,35 @@ class AIPatientSimulator extends HTMLElement {
                     flex-wrap: wrap;
                 }
                 button {
-                    background-color: #0d6efd;
+                    background-color: #2563eb;
                     color: white;
                     border: none;
                     padding: 12px 24px;
-                    font-size: 16px;
+                    font-size: 14px;
+                    font-weight: bold;
                     border-radius: 25px;
                     cursor: pointer;
-                    transition: 0.3s;
+                    transition: all 0.2s;
                 }
                 button:hover {
-                    opacity: 0.8;
+                    opacity: 0.9;
+                    transform: translateY(-1px);
+                }
+                button:active {
+                    transform: translateY(0);
                 }
                 button:disabled {
-                    background-color: #cccccc !important;
+                    background-color: #cbd5e1 !important;
                     cursor: not-allowed;
                     opacity: 1;
+                    transform: none !important;
                 }
                 #status {
                     display: block;
                     text-align: center;
                     margin-top: 10px;
-                    color: #6c757d;
-                    font-size: 14px;
+                    color: #64748b;
+                    font-size: 13px;
                     width: 100%;
                 }
                 
@@ -658,32 +851,40 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
 
                 <!-- Patient Persona Bank Card directly in student Portal screen -->
-                <div class="portal-card" id="persona-bank-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
-                    <label for="persona-preset-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <div class="portal-card" id="persona-bank-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                    <label style="font-weight: 800; color: #1e3a8a; font-size: 14px; display: block; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                         คลังข้อมูลบุคลิกและระดับอารมณ์คนไข้ (Patient Persona Bank)
                     </label>
-                    <select id="persona-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
+                    <select id="persona-preset-select" style="display: none;">
                         <!-- Options populated dynamically by JS -->
                     </select>
-                    <div id="persona-summary-badge" style="font-size: 12px; color: #475569; background-color: #f1f5f9; padding: 8px 12px; border-radius: 8px; line-height: 1.4; margin-bottom: 10px;">
+                    
+                    <!-- Horizontal scroll container of Patient Cards / Avatars -->
+                    <div id="persona-avatars-list" class="avatar-scroll-container"></div>
+                    
+                    <!-- Dynamic summary panel showing descriptions and progress bars -->
+                    <div id="persona-details-panel" class="persona-details-panel">
                         กำลังโหลดข้อมูลบุคลิก...
                     </div>
-                    <button id="customize-persona-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
-                        ตั้งค่าคุณสมบัติระดับอารมณ์...
-                    </button>
-                    <button id="delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
-                        ลบบุคลิกภาพออกจากระบบ
-                    </button>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button id="customize-persona-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                            ปรับแต่งอารมณ์...
+                        </button>
+                        <button id="delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                            ลบบุคลิก
+                        </button>
+                    </div>
                 </div>
 
                 <div class="portal-btns-container">
-                    <button id="blind-osce-btn" class="portal-btn" style="background-color: #0d6efd;">
+                    <button id="blind-osce-btn" class="portal-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
                         จำลองการสอบแบบสุ่มเคส (Blind Case Encounter)
                     </button>
-                    <button id="select-syndrome-btn" class="portal-btn" style="background-color: #6c757d;">
+                    <button id="select-syndrome-btn" class="portal-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                         เลือกเคสโรคสำหรับฝึกฝน (Selective Categories)
                     </button>
-                    <button id="view-history-btn" class="portal-btn" style="background-color: #198754;">
+                    <button id="view-history-btn" class="portal-btn" style="background: #ffffff; color: #2563eb; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         รายงานและประวัติการฝึกฝนย้อนหลัง (My Activity History)
                     </button>
                 </div>
@@ -704,31 +905,39 @@ class AIPatientSimulator extends HTMLElement {
             </div>
 
             <!-- Pre-Exam Configuration Gate Modal -->
-            <div id="pre-exam-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 29000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
-                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(30, 41, 59, 0.95); max-width: 400px; text-align: left;">
-                    <div class="auth-title" style="background: linear-gradient(135deg, #60a5fa, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
+            <div id="pre-exam-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); z-index: 29000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; text-align: center;">
+                <div class="auth-card" style="border: 1px solid #e2e8f0; background: #ffffff; max-width: 420px; text-align: left; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+                    <div class="auth-title" style="background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
                     
                     <div style="margin-bottom: 15px;">
-                        <label for="pre-exam-preset-select" style="font-weight: bold; color: #cbd5e1; font-size: 14px; display: block; margin-bottom: 8px;">
+                        <label style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px;">
                             เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:
                         </label>
-                        <select id="pre-exam-preset-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
+                        <select id="pre-exam-preset-select" style="display: none;">
                             <!-- Options populated dynamically by JS -->
                         </select>
-                        <div id="pre-exam-summary-badge" style="font-size: 12px; color: #e2e8f0; background-color: #334155; padding: 10px 14px; border-radius: 8px; line-height: 1.4; border: 1px solid #475569; margin-bottom: 12px;">
+                        
+                        <!-- Pre-exam scrollable avatars -->
+                        <div id="pre-exam-avatars-list" class="avatar-scroll-container"></div>
+                        
+                        <!-- Pre-exam details panel -->
+                        <div id="pre-exam-details-panel" class="persona-details-panel" style="background: #f8fafc; border-color: #e2e8f0; color: #1e293b; margin-bottom: 15px;">
                             กำลังโหลดรายละเอียดบุคลิกภาพ...
                         </div>
-                        <button id="pre-exam-customize-btn" style="background-color: #4f46e5; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
-                            ปรับแต่งบุคลิกภาพก่อนสอบ...
-                        </button>
-                        <button id="pre-exam-delete-persona-btn" style="background-color: #dc3545; color: white; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; margin-top: 8px;">
-                            ลบบุคลิกภาพออกจากระบบ
-                        </button>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button id="pre-exam-customize-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                                ปรับแต่งอารมณ์...
+                            </button>
+                            <button id="pre-exam-delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                                ลบบุคลิก
+                            </button>
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button id="pre-exam-cancel-btn" style="background: #475569; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center;">ย้อนกลับ</button>
-                        <button id="pre-exam-start-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">เริ่มสอบซักประวัติ</button>
+                        <button id="pre-exam-cancel-btn" style="background: #64748b; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; transition: background-color 0.2s;">ย้อนกลับ</button>
+                        <button id="pre-exam-start-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); transition: transform 0.2s;">เริ่มสอบซักประวัติ</button>
                     </div>
                 </div>
             </div>
@@ -834,18 +1043,18 @@ class AIPatientSimulator extends HTMLElement {
             </div>
 
             <!-- Disclaimer Warning Modal -->
-            <div id="disclaimer-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; color: white; text-align: center;">
-                <div class="auth-card" style="border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(30, 41, 59, 0.95); max-width: 360px;">
-                    <div class="auth-title" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 18px;">ข้อตกลงและโควต้าการใช้งานระบบคลาวด์ (Cloud AI Quota)</div>
-                    <div class="auth-desc" style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin-bottom: 20px;">
+            <div id="disclaimer-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); z-index: 30000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; text-align: center;">
+                <div class="auth-card" style="border: 1px solid #e2e8f0; background: #ffffff; max-width: 360px; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
+                    <div class="auth-title" style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 18px; font-weight: 800;">ข้อตกลงและโควต้าการใช้งานระบบคลาวด์ (Cloud AI Quota)</div>
+                    <div class="auth-desc" style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
                         คุณกำลังสลับไปเปิดใช้งานโมเดลภาษาไทยอัจฉริยะในคลาวด์ ซึ่งมีข้อจำกัดด้านโควต้าทรัพยากร:<br>
                         • จำกัดคำถามสูงสุด <b>30 ข้อความต่อหนึ่งรอบสอบ</b><br>
                         • จำกัดคำถามสูงสุด <b>50 ข้อความต่อคนต่อวัน</b><br>
-                        <small style="color: #fbbf24; display: block; margin-top: 8px;">*หากใช้เต็มโควต้าระบบจะปรับสลับเป็นโมเดลโลคอล Ollama รันฟรีอัตโนมัติ</small>
+                        <small style="color: #ea580c; display: block; margin-top: 8px; font-weight: 600;">*หากใช้เต็มโควต้าระบบจะปรับสลับเป็นโมเดลโลคอล Ollama รันฟรีอัตโนมัติ</small>
                     </div>
                     <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button id="disclaimer-cancel-btn" style="background: #475569; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px;">กลับไปใช้โลคอล</button>
-                        <button id="disclaimer-accept-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">ยอมรับโควต้า</button>
+                        <button id="disclaimer-cancel-btn" style="background: #64748b; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; transition: 0.2s;">กลับไปใช้โลคอล</button>
+                        <button id="disclaimer-accept-btn" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: 0.2s;">ยอมรับโควต้า</button>
                     </div>
                 </div>
             </div>
@@ -1208,11 +1417,13 @@ class AIPatientSimulator extends HTMLElement {
                 }
                 
                 card.innerHTML = `
-                    <div>
+                    <div class="case-card-left">
                         <span class="badge ${badgeClass}">${c.category}</span>
                         <h4 class="case-title">${c.scenario_name}</h4>
                     </div>
-                    <p class="case-desc"><b>อาการสำคัญ:</b> ${c.chief_complaint}</p>
+                    <div class="case-card-right">
+                        <p class="case-desc"><b>อาการสำคัญ:</b> ${c.chief_complaint}</p>
+                    </div>
                 `;
                 this.casesCardsContainer.appendChild(card);
             });
@@ -1418,59 +1629,113 @@ class AIPatientSimulator extends HTMLElement {
     loadPersonaBank() {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
         
-        let html = `
+        let selectHtml = `
             <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="normal">ปกติ (Normal)</option>
             <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
             <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
             <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+            <option value="depressed">ซึมเศร้าเหนื่อยล้า (Depressed Preset)</option>
         `;
         
         if (list.length > 0) {
-            html += `<optgroup label="บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
             list.forEach(p => {
-                html += `<option value="custom_${p.id}">${p.name}</option>`;
+                selectHtml += `<option value="custom_${p.id}">${p.name}</option>`;
             });
-            html += `</optgroup>`;
         }
+        selectHtml += `<option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>`;
+        this.portalPresetSelect.innerHTML = selectHtml;
         
-        html += `
-            <option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>
+        const container = this.shadowDOM.getElementById('persona-avatars-list');
+        if (!container) return;
+        
+        const currentVal = this.portalPresetSelect.value;
+        container.innerHTML = "";
+        
+        const standardAvatars = [
+            { val: 'cooperative', label: 'ปกติ / ใจเย็น', img: 'images/patient_normal.png' },
+            { val: 'anxious', label: 'วิตกกังวลสูง', img: 'images/patient_anxious.png' },
+            { val: 'severe_pain', label: 'ปวดรุนแรง', img: 'images/patient_pain.png' },
+            { val: 'combative', label: 'หงุดหงิดก้าวร้าว', img: 'images/patient_angry.png' },
+            { val: 'depressed', label: 'ซึมเศร้าท้อแท้', img: 'images/patient_depressed.png' }
+        ];
+        
+        standardAvatars.forEach(av => {
+            const card = document.createElement('div');
+            card.className = `avatar-card${currentVal === av.val ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="avatar-img-wrapper">
+                    <img class="avatar-img" src="${av.img}" alt="${av.label}">
+                </div>
+                <div class="avatar-label">${av.label}</div>
+            `;
+            card.addEventListener('click', () => {
+                this.portalPresetSelect.value = av.val;
+                this.handlePersonaChange();
+            });
+            container.appendChild(card);
+        });
+        
+        list.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `avatar-card${currentVal === 'custom_' + p.id ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="avatar-img-wrapper">
+                    <img class="avatar-img" src="images/patient_custom.png" alt="${p.name}">
+                    ${(!p.student_id || p.student_id === this.studentId) ? `<div class="delete-avatar-badge" title="ลบบุคลิกนี้">&times;</div>` : ''}
+                </div>
+                <div class="avatar-label">${p.name}</div>
+            `;
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-avatar-badge')) {
+                    e.stopPropagation();
+                    this.deleteSelectedPersona(p.id);
+                    return;
+                }
+                this.portalPresetSelect.value = 'custom_' + p.id;
+                this.handlePersonaChange();
+            });
+            container.appendChild(card);
+        });
+        
+        const addCard = document.createElement('div');
+        addCard.className = 'avatar-card add-avatar-card';
+        addCard.innerHTML = `
+            <div class="avatar-img-wrapper" style="border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #94a3b8; font-weight: 300;">
+                +
+            </div>
+            <div class="avatar-label">ปรับแต่งอารมณ์</div>
         `;
+        addCard.addEventListener('click', () => {
+            this.portalPresetSelect.value = 'create_new';
+            this.handlePersonaChange();
+        });
+        container.appendChild(addCard);
         
-        this.portalPresetSelect.innerHTML = html;
         this.updatePersonaSummary();
     }
 
     handlePersonaChange() {
         const val = this.portalPresetSelect.value;
         if (val === 'create_new') {
-            // Reset to cooperative defaults for drawer setup
             this.presetSelect.value = 'cooperative';
             this.applyPreset('cooperative');
             this.promptTextarea.value = "";
-            
-            // Clean Bank Saving drawers controls
             this.saveToBankCheckbox.checked = false;
             this.bankInputGroup.style.display = 'none';
             this.bankPersonaName.value = "";
-            
-            // Revert portal selector state to avoid visual glitches
             this.portalPresetSelect.value = 'cooperative';
-            this.updatePersonaSummary();
-            
+            this.loadPersonaBank();
             this.openDrawer();
         } else if (val.startsWith('custom_')) {
             const id = val.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                // Sync simulation active state
                 this.anger = p.anger;
                 this.sadness = p.sadness;
                 this.happiness = p.happiness;
                 this.customPrompt = p.additional_instructions || "";
-                
-                // Sync drawer sliders UI
                 this.angerSlider.value = p.anger;
                 this.angerVal.innerText = p.anger + "%";
                 this.sadnessSlider.value = p.sadness;
@@ -1479,28 +1744,49 @@ class AIPatientSimulator extends HTMLElement {
                 this.happinessVal.innerText = p.happiness + "%";
                 this.promptTextarea.value = p.additional_instructions || "";
                 this.presetSelect.value = 'custom';
-                
                 this.calculatePAD();
+                
+                // Update CSS classes active state
+                const container = this.shadowDOM.getElementById('persona-avatars-list');
+                if (container) {
+                    container.querySelectorAll('.avatar-card').forEach(card => card.classList.remove('active'));
+                    const cards = container.querySelectorAll('.avatar-card');
+                    const idx = list.findIndex(item => item.id === id);
+                    if (idx !== -1 && cards[5 + idx]) {
+                        cards[5 + idx].classList.add('active');
+                    }
+                }
+                
                 this.updatePersonaSummary();
 
-                // Sync Pre-Exam select
                 if (this.preExamPresetSelect) {
                     this.preExamPresetSelect.value = val;
-                    this.updatePreExamPersonaSummary();
+                    this.loadPreExamPersonaBank();
                 }
             }
         } else {
-            // Preset values
             this.applyPreset(val);
             this.customPrompt = "";
             this.promptTextarea.value = "";
             this.presetSelect.value = val;
+            
+            // Update CSS classes active state
+            const container = this.shadowDOM.getElementById('persona-avatars-list');
+            if (container) {
+                container.querySelectorAll('.avatar-card').forEach(card => card.classList.remove('active'));
+                const standardAvatars = ['cooperative', 'anxious', 'severe_pain', 'combative', 'depressed'];
+                const idx = standardAvatars.indexOf(val);
+                const cards = container.querySelectorAll('.avatar-card');
+                if (idx !== -1 && cards[idx]) {
+                    cards[idx].classList.add('active');
+                }
+            }
+            
             this.updatePersonaSummary();
 
-            // Sync Pre-Exam select
             if (this.preExamPresetSelect) {
                 this.preExamPresetSelect.value = val;
-                this.updatePreExamPersonaSummary();
+                this.loadPreExamPersonaBank();
             }
         }
     }
@@ -1508,61 +1794,116 @@ class AIPatientSimulator extends HTMLElement {
     loadPreExamPersonaBank() {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
         
-        let html = `
+        let selectHtml = `
             <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
+            <option value="normal">ปกติ (Normal)</option>
             <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
             <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
             <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
+            <option value="depressed">ซึมเศร้าเหนื่อยล้า (Depressed Preset)</option>
         `;
         
         if (list.length > 0) {
-            html += `<optgroup label="บุคลิกส่วนตัวในคลังของคุณ (${list.length}/5)">`;
             list.forEach(p => {
-                html += `<option value="custom_${p.id}">${p.name}</option>`;
+                selectHtml += `<option value="custom_${p.id}">${p.name}</option>`;
             });
-            html += `</optgroup>`;
         }
-        
-        html += `
-            <option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>
-        `;
+        selectHtml += `<option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>`;
         
         if (this.preExamPresetSelect) {
-            this.preExamPresetSelect.innerHTML = html;
-            this.updatePreExamPersonaSummary();
+            this.preExamPresetSelect.innerHTML = selectHtml;
         }
+        
+        const container = this.shadowDOM.getElementById('pre-exam-avatars-list');
+        if (!container) return;
+        
+        const currentVal = this.preExamPresetSelect.value;
+        container.innerHTML = "";
+        
+        const standardAvatars = [
+            { val: 'cooperative', label: 'ปกติ / ใจเย็น', img: 'images/patient_normal.png' },
+            { val: 'anxious', label: 'วิตกกังวลสูง', img: 'images/patient_anxious.png' },
+            { val: 'severe_pain', label: 'ปวดรุนแรง', img: 'images/patient_pain.png' },
+            { val: 'combative', label: 'หงุดหงิดก้าวร้าว', img: 'images/patient_angry.png' },
+            { val: 'depressed', label: 'ซึมเศร้าท้อแท้', img: 'images/patient_depressed.png' }
+        ];
+        
+        standardAvatars.forEach(av => {
+            const card = document.createElement('div');
+            card.className = `avatar-card${currentVal === av.val ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="avatar-img-wrapper">
+                    <img class="avatar-img" src="${av.img}" alt="${av.label}">
+                </div>
+                <div class="avatar-label">${av.label}</div>
+            `;
+            card.addEventListener('click', () => {
+                this.preExamPresetSelect.value = av.val;
+                this.handlePreExamPersonaChange();
+            });
+            container.appendChild(card);
+        });
+        
+        list.forEach(p => {
+            const card = document.createElement('div');
+            card.className = `avatar-card${currentVal === 'custom_' + p.id ? ' active' : ''}`;
+            card.innerHTML = `
+                <div class="avatar-img-wrapper">
+                    <img class="avatar-img" src="images/patient_custom.png" alt="${p.name}">
+                    ${(!p.student_id || p.student_id === this.studentId) ? `<div class="delete-avatar-badge" title="ลบบุคลิกนี้">&times;</div>` : ''}
+                </div>
+                <div class="avatar-label">${p.name}</div>
+            `;
+            card.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-avatar-badge')) {
+                    e.stopPropagation();
+                    this.deleteSelectedPersona(p.id);
+                    return;
+                }
+                this.preExamPresetSelect.value = 'custom_' + p.id;
+                this.handlePreExamPersonaChange();
+            });
+            container.appendChild(card);
+        });
+        
+        const addCard = document.createElement('div');
+        addCard.className = 'avatar-card add-avatar-card';
+        addCard.innerHTML = `
+            <div class="avatar-img-wrapper" style="border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #94a3b8; font-weight: 300;">
+                +
+            </div>
+            <div class="avatar-label">ปรับแต่งอารมณ์</div>
+        `;
+        addCard.addEventListener('click', () => {
+            this.preExamPresetSelect.value = 'create_new';
+            this.handlePreExamPersonaChange();
+        });
+        container.appendChild(addCard);
+        
+        this.updatePreExamPersonaSummary();
     }
 
     handlePreExamPersonaChange() {
         const val = this.preExamPresetSelect.value;
         if (val === 'create_new') {
-            // Reset to cooperative defaults for drawer setup
             this.presetSelect.value = 'cooperative';
             this.applyPreset('cooperative');
             this.promptTextarea.value = "";
-            
-            // Clean Bank Saving drawers controls
             this.saveToBankCheckbox.checked = false;
             this.bankInputGroup.style.display = 'none';
             this.bankPersonaName.value = "";
-            
-            // Revert pre-exam selector state to avoid visual glitches
             this.preExamPresetSelect.value = 'cooperative';
-            this.updatePreExamPersonaSummary();
-            
+            this.loadPreExamPersonaBank();
             this.openDrawer();
         } else if (val.startsWith('custom_')) {
             const id = val.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                // Sync simulation active state
                 this.anger = p.anger;
                 this.sadness = p.sadness;
                 this.happiness = p.happiness;
                 this.customPrompt = p.additional_instructions || "";
-                
-                // Sync drawer sliders UI
                 this.angerSlider.value = p.anger;
                 this.angerVal.innerText = p.anger + "%";
                 this.sadnessSlider.value = p.sadness;
@@ -1571,32 +1912,53 @@ class AIPatientSimulator extends HTMLElement {
                 this.happinessVal.innerText = p.happiness + "%";
                 this.promptTextarea.value = p.additional_instructions || "";
                 this.presetSelect.value = 'custom';
-                
                 this.calculatePAD();
+                
+                // Update CSS classes active state
+                const container = this.shadowDOM.getElementById('pre-exam-avatars-list');
+                if (container) {
+                    container.querySelectorAll('.avatar-card').forEach(card => card.classList.remove('active'));
+                    const cards = container.querySelectorAll('.avatar-card');
+                    const idx = list.findIndex(item => item.id === id);
+                    if (idx !== -1 && cards[5 + idx]) {
+                        cards[5 + idx].classList.add('active');
+                    }
+                }
+                
                 this.updatePreExamPersonaSummary();
                 
-                // Also update portal select to match
                 this.portalPresetSelect.value = val;
-                this.updatePersonaSummary();
+                this.loadPersonaBank();
             }
         } else {
-            // Preset values
             this.applyPreset(val);
             this.customPrompt = "";
             this.promptTextarea.value = "";
             this.presetSelect.value = val;
+            
+            // Update CSS classes active state
+            const container = this.shadowDOM.getElementById('pre-exam-avatars-list');
+            if (container) {
+                container.querySelectorAll('.avatar-card').forEach(card => card.classList.remove('active'));
+                const standardAvatars = ['cooperative', 'anxious', 'severe_pain', 'combative', 'depressed'];
+                const idx = standardAvatars.indexOf(val);
+                const cards = container.querySelectorAll('.avatar-card');
+                if (idx !== -1 && cards[idx]) {
+                    cards[idx].classList.add('active');
+                }
+            }
+            
             this.updatePreExamPersonaSummary();
             
-            // Also update portal select to match
             this.portalPresetSelect.value = val;
-            this.updatePersonaSummary();
+            this.loadPersonaBank();
         }
     }
 
     updatePreExamPersonaSummary() {
         const selectedVal = this.preExamPresetSelect.value;
-        const badge = this.shadowDOM.getElementById('pre-exam-summary-badge');
-        if (!badge) return;
+        const detailsPanel = this.shadowDOM.getElementById('pre-exam-details-panel');
+        if (!detailsPanel) return;
         
         // Show/hide delete button depending on whether selected persona is custom and owned by current student
         const deleteBtn = this.shadowDOM.getElementById('pre-exam-delete-persona-btn');
@@ -1615,32 +1977,81 @@ class AIPatientSimulator extends HTMLElement {
             }
         }
         
-        let text = "";
+        let title = "";
+        let desc = "";
+        let anger = 0, sadness = 0, happiness = 100;
+        let extra = "";
+        
         if (selectedVal === 'cooperative') {
-            text = "<b>ลักษณะคนไข้:</b> สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            title = "แม่แบบมาตรฐานคนไข้ (Standard Cooperative)";
+            desc = "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            anger = 0; sadness = 0; happiness = 100;
         } else if (selectedVal === 'normal') {
-            text = "<b>ลักษณะคนไข้:</b> บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            title = "คนไข้บุคลิกทั่วไป (Normal Preset)";
+            desc = "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            anger = 0; sadness = 0; happiness = 50;
         } else if (selectedVal === 'anxious') {
-            text = "<b>ลักษณะคนไข้:</b> กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            title = "คนไข้วิตกกังวลสูง (Anxious Preset)";
+            desc = "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            anger = 10; sadness = 70; happiness = 10;
         } else if (selectedVal === 'severe_pain') {
-            text = "<b>ลักษณะคนไข้:</b> มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            title = "คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)";
+            desc = "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            anger = 25; sadness = 75; happiness = 0;
         } else if (selectedVal === 'combative') {
-            text = "<b>ลักษณะคนไข้:</b> หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            title = "คนไข้หงุดหงิดห้วน (Combative Preset)";
+            desc = "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            anger = 90; sadness = 10; happiness = 0;
         } else if (selectedVal === 'depressed') {
-            text = "<b>ลักษณะคนไข้:</b> ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            title = "คนไข้ซึมเศร้าเหนื่อยล้า (Depressed Preset)";
+            desc = "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            anger = 0; sadness = 85; happiness = 0;
         } else if (selectedVal.startsWith('custom_')) {
             const id = selectedVal.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                text = `<b>ลักษณะคนไข้ (คลัง):</b> ${p.name}<br>• โกรธ: ${p.anger}% | เศร้า: ${p.sadness}% | สุข: ${p.happiness}%<br>• คำสั่งเสริม: ${p.additional_instructions || 'ไม่มี'}`;
+                title = `บุคลิกคลังส่วนตัว: ${p.name}`;
+                desc = "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤติกรรมเสริมพิเศษส่วนตัว";
+                anger = p.anger;
+                sadness = p.sadness;
+                happiness = p.happiness;
+                if (p.additional_instructions) {
+                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>คำสั่งเสริม:</b> "${p.additional_instructions}"</div>`;
+                }
             } else {
-                text = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+                title = "ไม่พบข้อมูลบุคลิกจำลองนี้";
             }
-        } else {
-            text = "แม่แบบบุคลิกแพทย์จำลอง";
         }
-        badge.innerHTML = text;
+        
+        detailsPanel.innerHTML = `
+            <div class="persona-name" style="color: #1e3a8a;">${title}</div>
+            <div class="persona-desc" style="color: #475569;">${desc}</div>
+            <div class="emotion-bars">
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความสุข / สงบ</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-happiness" style="width: ${happiness}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${happiness}%</span>
+                </div>
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความเศร้า / อ่อนไหว</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-sadness" style="width: ${sadness}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${sadness}%</span>
+                </div>
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความโกรธ / ก้าวร้าว</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-anger" style="width: ${anger}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${anger}%</span>
+                </div>
+            </div>
+            ${extra}
+        `;
     }
 
     deleteSelectedPersona() {
@@ -1706,7 +2117,8 @@ class AIPatientSimulator extends HTMLElement {
 
     updatePersonaSummary() {
         const selectedVal = this.portalPresetSelect.value;
-        const badge = this.shadowDOM.getElementById('persona-summary-badge');
+        const detailsPanel = this.shadowDOM.getElementById('persona-details-panel');
+        if (!detailsPanel) return;
         
         // Show/hide delete button depending on whether selected persona is custom and owned by current student
         const deleteBtn = this.shadowDOM.getElementById('delete-persona-btn');
@@ -1725,32 +2137,81 @@ class AIPatientSimulator extends HTMLElement {
             }
         }
         
-        let text = "";
+        let title = "";
+        let desc = "";
+        let anger = 0, sadness = 0, happiness = 100;
+        let extra = "";
+        
         if (selectedVal === 'cooperative') {
-            text = "<b>ลักษณะคนไข้:</b> สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            title = "แม่แบบมาตรฐานคนไข้ (Standard Cooperative)";
+            desc = "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            anger = 0; sadness = 0; happiness = 100;
         } else if (selectedVal === 'normal') {
-            text = "<b>ลักษณะคนไข้:</b> บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            title = "คนไข้บุคลิกทั่วไป (Normal Preset)";
+            desc = "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            anger = 0; sadness = 0; happiness = 50;
         } else if (selectedVal === 'anxious') {
-            text = "<b>ลักษณะคนไข้:</b> กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            title = "คนไข้วิตกกังวลสูง (Anxious Preset)";
+            desc = "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            anger = 10; sadness = 70; happiness = 10;
         } else if (selectedVal === 'severe_pain') {
-            text = "<b>ลักษณะคนไข้:</b> มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            title = "คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)";
+            desc = "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            anger = 25; sadness = 75; happiness = 0;
         } else if (selectedVal === 'combative') {
-            text = "<b>ลักษณะคนไข้:</b> หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            title = "คนไข้หงุดหงิดห้วน (Combative Preset)";
+            desc = "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            anger = 90; sadness = 10; happiness = 0;
         } else if (selectedVal === 'depressed') {
-            text = "<b>ลักษณะคนไข้:</b> ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            title = "คนไข้ซึมเศร้าเหนื่อยล้า (Depressed Preset)";
+            desc = "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            anger = 0; sadness = 85; happiness = 0;
         } else if (selectedVal.startsWith('custom_')) {
             const id = selectedVal.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                text = `<b>ลักษณะคนไข้ (คลัง):</b> ${p.name}<br>• โกรธ: ${p.anger}% | เศร้า: ${p.sadness}% | สุข: ${p.happiness}%<br>• คำสั่งเสริม: ${p.additional_instructions || 'ไม่มี'}`;
+                title = `บุคลิกคลังส่วนตัว: ${p.name}`;
+                desc = "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤติกรรมเสริมพิเศษส่วนตัว";
+                anger = p.anger;
+                sadness = p.sadness;
+                happiness = p.happiness;
+                if (p.additional_instructions) {
+                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>คำสั่งเสริม:</b> "${p.additional_instructions}"</div>`;
+                }
             } else {
-                text = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+                title = "ไม่พบข้อมูลบุคลิกจำลองนี้";
             }
-        } else {
-            text = "แม่แบบบุคลิกแพทย์จำลอง";
         }
-        badge.innerHTML = text;
+        
+        detailsPanel.innerHTML = `
+            <div class="persona-name" style="color: #1e3a8a;">${title}</div>
+            <div class="persona-desc" style="color: #475569;">${desc}</div>
+            <div class="emotion-bars">
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความสุข / สงบ</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-happiness" style="width: ${happiness}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${happiness}%</span>
+                </div>
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความเศร้า / อ่อนไหว</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-sadness" style="width: ${sadness}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${sadness}%</span>
+                </div>
+                <div class="emotion-row">
+                    <span class="emotion-label" style="color: #64748b;">ความโกรธ / ก้าวร้าว</span>
+                    <div class="emotion-bar-bg" style="background: #f1f5f9;">
+                        <div class="emotion-bar-fill fill-anger" style="width: ${anger}%"></div>
+                    </div>
+                    <span class="emotion-bar-val" style="color: #475569;">${anger}%</span>
+                </div>
+            </div>
+            ${extra}
+        `;
     }
 
 
