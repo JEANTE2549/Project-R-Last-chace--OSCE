@@ -6,3 +6,4 @@ generate_84_cases.py
 patient_sim.py
 .env
 logs/
+/data
