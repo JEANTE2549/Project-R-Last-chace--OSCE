@@ -1721,12 +1721,13 @@ class AIPatientSimulator extends HTMLElement {
             this.presetSelect.value = 'cooperative';
             this.applyPreset('cooperative');
             this.promptTextarea.value = "";
-            this.saveToBankCheckbox.checked = false;
-            this.bankInputGroup.style.display = 'none';
+            this.saveToBankCheckbox.checked = true;
+            this.toggleBankInputGroup(true);
             this.bankPersonaName.value = "";
             this.portalPresetSelect.value = 'cooperative';
             this.loadPersonaBank();
             this.openDrawer();
+            setTimeout(() => this.bankPersonaName.focus(), 100);
         } else if (val.startsWith('custom_')) {
             const id = val.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
@@ -1889,12 +1890,13 @@ class AIPatientSimulator extends HTMLElement {
             this.presetSelect.value = 'cooperative';
             this.applyPreset('cooperative');
             this.promptTextarea.value = "";
-            this.saveToBankCheckbox.checked = false;
-            this.bankInputGroup.style.display = 'none';
+            this.saveToBankCheckbox.checked = true;
+            this.toggleBankInputGroup(true);
             this.bankPersonaName.value = "";
             this.preExamPresetSelect.value = 'cooperative';
             this.loadPreExamPersonaBank();
             this.openDrawer();
+            setTimeout(() => this.bankPersonaName.focus(), 100);
         } else if (val.startsWith('custom_')) {
             const id = val.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
@@ -2054,9 +2056,9 @@ class AIPatientSimulator extends HTMLElement {
         `;
     }
 
-    deleteSelectedPersona() {
-        let val = this.portalPresetSelect.value; 
-        if (this.preExamModal && this.preExamModal.style.display === 'flex') {
+    deleteSelectedPersona(personaId) {
+        let val = personaId ? ("custom_" + personaId) : this.portalPresetSelect.value; 
+        if (!personaId && this.preExamModal && this.preExamModal.style.display === 'flex') {
             val = this.preExamPresetSelect.value;
         }
         if (!val || !val.startsWith('custom_')) return;
@@ -2081,12 +2083,15 @@ class AIPatientSimulator extends HTMLElement {
             this.loadPersonaBank();
             this.loadPreExamPersonaBank();
             
-            // Revert back to cooperative calm default
-            this.portalPresetSelect.value = 'cooperative';
-            if (this.preExamPresetSelect) {
-                this.preExamPresetSelect.value = 'cooperative';
+            // Revert back to cooperative calm default if deleted was selected
+            if (this.portalPresetSelect.value === val) {
+                this.portalPresetSelect.value = 'cooperative';
+                this.handlePersonaChange();
             }
-            this.handlePersonaChange();
+            if (this.preExamPresetSelect && this.preExamPresetSelect.value === val) {
+                this.preExamPresetSelect.value = 'cooperative';
+                this.handlePreExamPersonaChange();
+            }
         }
     }
 

@@ -6,4 +6,5 @@ generate_84_cases.py
 patient_sim.py
 .env
 logs/
-/data
+data/medical_db/
+__pycache__/
