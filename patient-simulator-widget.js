@@ -33,6 +33,12 @@ class AIPatientSimulator extends HTMLElement {
         this.ttsQueue = [];
         this.isSpeaking = false;
         this.sentenceBuffer = "";
+        this.currentPatientGender = "female";
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.useBrowserSTT = false;
+        this.useBrowserTTS = false;
+        this.activeAudio = null;
     }
 
     connectedCallback() {
@@ -460,6 +466,84 @@ class AIPatientSimulator extends HTMLElement {
                     border-bottom-left-radius: 2px;
                     border: 1px solid #e2e8f0;
                 }
+                
+                /* Typing Indicator Styles */
+                .typing-indicator-dots {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    height: 17px;
+                    padding: 4px 0;
+                }
+                .typing-indicator-dot {
+                    width: 6px;
+                    height: 6px;
+                    background-color: #64748b;
+                    border-radius: 50%;
+                    animation: bounce 1.3s linear infinite;
+                }
+                .typing-indicator-dot:nth-child(2) {
+                    animation-delay: 0.15s;
+                }
+                .typing-indicator-dot:nth-child(3) {
+                    animation-delay: 0.3s;
+                }
+                @keyframes bounce {
+                    0%, 60%, 100% {
+                        transform: translateY(0);
+                    }
+                    30% {
+                        transform: translateY(-4px);
+                    }
+                }
+
+                /* Segmented Difficulty Control */
+                .difficulty-group {
+                    display: flex;
+                    background: #f1f5f9;
+                    border-radius: 8px;
+                    padding: 4px;
+                    gap: 4px;
+                    border: 1px solid #cbd5e1;
+                    margin-bottom: 12px;
+                }
+                .difficulty-option {
+                    flex: 1;
+                    position: relative;
+                }
+                .difficulty-option input[type="radio"] {
+                    position: absolute;
+                    opacity: 0;
+                    width: 0;
+                    height: 0;
+                }
+                .difficulty-label {
+                    display: block;
+                    text-align: center;
+                    padding: 8px 12px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #64748b;
+                    background: transparent;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    user-select: none;
+                }
+                .difficulty-option input[type="radio"]:checked + .difficulty-label {
+                    background: #ffffff;
+                    color: #2563eb;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+                .difficulty-option input[type="radio"]:checked[value="easy"] + .difficulty-label {
+                    color: #166534;
+                }
+                .difficulty-option input[type="radio"]:checked[value="medium"] + .difficulty-label {
+                    color: #2563eb;
+                }
+                .difficulty-option input[type="radio"]:checked[value="hard"] + .difficulty-label {
+                    color: #ea580c;
+                }
                 .btn-container {
                     text-align: center;
                     gap: 10px;
@@ -830,6 +914,20 @@ class AIPatientSimulator extends HTMLElement {
                     border-color: #3b82f6;
                     outline: none;
                 }
+                #quota-tracker-bar {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-size: 13px;
+                    color: #475569;
+                    margin-bottom: 12px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-weight: 500;
+                    box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+                }
             </style>
             
             <!-- Pre-Encounter Entry Portal -->
@@ -837,7 +935,7 @@ class AIPatientSimulator extends HTMLElement {
                 <div class="portal-title">ระบบจำลองสถานการณ์คนไข้ซักประวัติ (OSCE Practice Platform)</div>
                 
                 <!-- Premium Model Inference Selector inside Portal -->
-                <div class="portal-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                <div class="portal-card" style="display: none; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
                     <label for="portal-tier-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
                         ระบบประมวลผลปัญญาประดิษฐ์ (AI Inference Selector)
                     </label>
@@ -972,6 +1070,30 @@ class AIPatientSimulator extends HTMLElement {
                     <input type="range" id="temp-slider" min="0.1" max="1.5" step="0.1" value="0.7">
                 </div>
 
+                <!-- Difficulty Level Preset -->
+                <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
+                    <label style="font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #444;">ระดับความยากในการซักประวัติ (Difficulty Level Preset)</label>
+                    <div class="difficulty-group">
+                        <div class="difficulty-option">
+                            <input type="radio" name="difficulty" id="diff-easy" value="easy">
+                            <label for="diff-easy" class="difficulty-label">ง่าย (Easy)</label>
+                        </div>
+                        <div class="difficulty-option">
+                            <input type="radio" name="difficulty" id="diff-medium" value="medium" checked>
+                            <label for="diff-medium" class="difficulty-label">ปานกลาง (Medium)</label>
+                        </div>
+                        <div class="difficulty-option">
+                            <input type="radio" name="difficulty" id="diff-hard" value="hard">
+                            <label for="diff-hard" class="difficulty-label">ยาก (Hard)</label>
+                        </div>
+                    </div>
+                    <span style="font-size: 11px; color: #64748b; display: block; margin-top: 4px; line-height: 1.4;">
+                        • <b>ง่าย:</b> คนไข้ตอบตรงประเด็น ไม่นอกเรื่อง<br>
+                        • <b>ปานกลาง:</b> ตอบตามประวัติปกติ มีลีลาตามอารมณ์พอดี<br>
+                        • <b>ยาก:</b> คนไข้โยกโย้ บ่นกังวลสูง หรือเจ็บปวดมาก ต้องซักประวัติอย่างใส่ใจและใช้ Empathy
+                    </span>
+                </div>
+
                 <!-- Dynamic Emotional Persona Settings Drawer Pane -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
                     <label for="preset-select">เลือกแม่แบบบุคลิกภาพ (Standard Presets)</label>
@@ -1076,6 +1198,7 @@ class AIPatientSimulator extends HTMLElement {
             <button id="settings-btn" title="ตั้งค่าอาการและอารมณ์คนไข้จำลอง" style="display: block; font-size: 14px; font-weight: bold; background-color: #334155; border-radius: 6px; padding: 6px 12px; border: none; color: white;">ตั้งค่าอารมณ์</button>
             <div class="widget-container" style="display: none;">
                 <h2>AI Patient Simulator (OSCE Practice Room)</h2>
+                <div id="quota-tracker-bar">☁️ กำลังตรวจสอบโควต้าประมวลผล...</div>
                 <div id="chat-box"></div>
                 <div class="btn-container">
                     <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">ยกเลิกการตรวจและกลับหน้าหลัก</button>
@@ -1125,6 +1248,7 @@ class AIPatientSimulator extends HTMLElement {
     }
     setupElements() {
         this.chatBox = this.shadowDOM.getElementById('chat-box');
+        this.quotaTrackerBar = this.shadowDOM.getElementById('quota-tracker-bar');
         this.status = this.shadowDOM.getElementById('status');
         this.micBtn = this.shadowDOM.getElementById('mic-btn');
         this.endBtn = this.shadowDOM.getElementById('end-btn');
@@ -1152,6 +1276,11 @@ class AIPatientSimulator extends HTMLElement {
         this.tempVal = this.shadowDOM.getElementById('temp-val');
         this.promptTextarea = this.shadowDOM.getElementById('prompt-textarea');
         this.saveSettingsBtn = this.shadowDOM.getElementById('save-settings-btn');
+        
+        // Difficulty preset radio elements
+        this.diffEasyRadio = this.shadowDOM.getElementById('diff-easy');
+        this.diffMediumRadio = this.shadowDOM.getElementById('diff-medium');
+        this.diffHardRadio = this.shadowDOM.getElementById('diff-hard');
         
         // Emotion panel elements
         this.presetSelect = this.shadowDOM.getElementById('preset-select');
@@ -1487,6 +1616,14 @@ class AIPatientSimulator extends HTMLElement {
 
     openDrawer() {
         this.settingsDrawer.style.display = 'block';
+        // Initialize difficulty selection from current temperature state
+        if (this.temperature <= 0.4) {
+            if (this.diffEasyRadio) this.diffEasyRadio.checked = true;
+        } else if (this.temperature <= 0.7) {
+            if (this.diffMediumRadio) this.diffMediumRadio.checked = true;
+        } else {
+            if (this.diffHardRadio) this.diffHardRadio.checked = true;
+        }
     }
 
     closeDrawer() {
@@ -1518,25 +1655,32 @@ class AIPatientSimulator extends HTMLElement {
         if (presetName === 'custom') return;
         
         let anger = 0, sadness = 0, happiness = 100;
+        let diff = 'medium'; // default
         
         switch (presetName) {
             case 'cooperative':
                 anger = 0; sadness = 0; happiness = 100;
+                diff = 'easy';
                 break;
             case 'normal':
                 anger = 0; sadness = 0; happiness = 50;
+                diff = 'medium';
                 break;
             case 'anxious':
                 anger = 10; sadness = 70; happiness = 10;
+                diff = 'hard';
                 break;
             case 'severe_pain':
                 anger = 25; sadness = 75; happiness = 0;
+                diff = 'hard';
                 break;
             case 'combative':
                 anger = 90; sadness = 10; happiness = 0;
+                diff = 'hard';
                 break;
             case 'depressed':
                 anger = 0; sadness = 85; happiness = 0;
+                diff = 'hard';
                 break;
         }
         
@@ -1549,6 +1693,26 @@ class AIPatientSimulator extends HTMLElement {
         this.happinessSlider.value = happiness;
         this.happinessVal.innerText = happiness + "%";
         
+        // Select corresponding difficulty radio
+        if (diff === 'easy') {
+            if (this.diffEasyRadio) this.diffEasyRadio.checked = true;
+            this.temperature = 0.3;
+        } else if (diff === 'medium') {
+            if (this.diffMediumRadio) this.diffMediumRadio.checked = true;
+            this.temperature = 0.6;
+        } else if (diff === 'hard') {
+            if (this.diffHardRadio) this.diffHardRadio.checked = true;
+            this.temperature = 0.9;
+        }
+        
+        // sync tempSlider value
+        if (this.tempSlider) {
+            this.tempSlider.value = this.temperature;
+        }
+        if (this.tempVal) {
+            this.tempVal.innerText = this.temperature;
+        }
+        
         this.calculatePAD();
     }
 
@@ -1560,7 +1724,24 @@ class AIPatientSimulator extends HTMLElement {
             this.selectedModel = modelValue;
         }
         
-        this.temperature = parseFloat(this.tempSlider.value);
+        // Read selected difficulty level preset and map to backend temperature
+        const selectedDifficulty = this.shadowDOM.querySelector('input[name="difficulty"]:checked')?.value || 'medium';
+        if (selectedDifficulty === 'easy') {
+            this.temperature = 0.3;
+        } else if (selectedDifficulty === 'medium') {
+            this.temperature = 0.6;
+        } else if (selectedDifficulty === 'hard') {
+            this.temperature = 0.9;
+        }
+        
+        // Sync tempSlider values just in case
+        if (this.tempSlider) {
+            this.tempSlider.value = this.temperature;
+        }
+        if (this.tempVal) {
+            this.tempVal.innerText = this.temperature;
+        }
+        
         this.customPrompt = this.promptTextarea.value;
         this.calculatePAD();
         
@@ -2227,6 +2408,12 @@ class AIPatientSimulator extends HTMLElement {
             this.socket.close();
             this.socket = null;
         }
+        if (this.activeAudio) {
+            try {
+                this.activeAudio.pause();
+            } catch (e) {}
+            this.activeAudio = null;
+        }
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
@@ -2266,6 +2453,24 @@ class AIPatientSimulator extends HTMLElement {
             this.socket.onmessage = (event) => {
                 const text = event.data;
                 
+                // Check if message is a JSON metadata object
+                if (text.trim().startsWith('{')) {
+                    try {
+                        const payload = JSON.parse(text);
+                        if (payload.type === 'metadata') {
+                            if (payload.gender) {
+                                this.currentPatientGender = payload.gender;
+                            }
+                            if (payload.quota_remaining !== undefined && payload.quota_limit !== undefined) {
+                                this.quotaTrackerBar.innerHTML = `☁️ โควต้าคลาวด์วันนี้คงเหลือ: ${payload.quota_remaining} / ${payload.quota_limit} ข้อความ`;
+                            }
+                            return;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing JSON message:", e);
+                    }
+                }
+                
                 if (text === "__END__") {
                     if (this.sentenceBuffer.trim()) {
                         this.enqueueTTS(this.sentenceBuffer.trim());
@@ -2284,6 +2489,9 @@ class AIPatientSimulator extends HTMLElement {
                 if (text.includes("ครบข้อจำกัด 30 คำถามสำหรับรอบประเมินนี้แล้ว")) {
                     this.showSessionEndedState();
                 }
+
+                // Hide typing indicator before rendering patient response
+                this.hideTypingIndicator();
 
                 if (!this.currentPatientMsgDiv) {
                     this.currentPatientMsgDiv = document.createElement('div');
@@ -2304,11 +2512,13 @@ class AIPatientSimulator extends HTMLElement {
             };
 
             this.socket.onclose = () => {
+                this.hideTypingIndicator();
                 this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
                 this.setupWizard.style.display = 'block';
             };
             
             this.socket.onerror = () => {
+                this.hideTypingIndicator();
                 this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
                 this.setupWizard.style.display = 'block';
             };
@@ -2319,12 +2529,123 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
-    toggleDictation() {
+    async toggleDictation() {
         if (this.isRecording) {
-            if (this.recognition) this.recognition.stop();
+            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+                this.mediaRecorder.stop();
+            } else if (this.recognition) {
+                this.recognition.stop();
+            }
             return;
         }
 
+        if (this.useBrowserSTT) {
+            this.runBrowserSTT();
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.audioChunks = [];
+            
+            let options = {};
+            if (MediaRecorder.isTypeSupported('audio/webm')) {
+                options = { mimeType: 'audio/webm' };
+            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                options = { mimeType: 'audio/mp4' };
+            }
+
+            this.mediaRecorder = new MediaRecorder(stream, options);
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstart = () => {
+                this.isRecording = true;
+                this.status.innerText = "กำลังบันทึกเสียงพูดของคุณ (คลิกอีกครั้งเมื่อพูดเสร็จ)...";
+                this.micBtn.innerText = "เสร็จสิ้นการพูด";
+                this.micBtn.style.backgroundColor = "#dc3545";
+                
+                if (this.cancelPortalBtn) {
+                    this.cancelPortalBtn.style.display = 'none';
+                }
+
+                this.tempMsgDiv = document.createElement('div');
+                this.tempMsgDiv.className = 'msg user';
+                this.tempMsgDiv.innerText = "แพทย์: กำลังฟัง...";
+                this.chatBox.appendChild(this.tempMsgDiv);
+                this.chatBox.scrollTop = this.chatBox.scrollHeight;
+                this.currentPatientMsgDiv = null;
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                this.isRecording = false;
+                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
+                this.micBtn.style.backgroundColor = "#0d6efd";
+                
+                stream.getTracks().forEach(track => track.stop());
+
+                const mimeType = this.mediaRecorder.mimeType || "audio/webm";
+                const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+                
+                if (audioBlob.size < 1000) {
+                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
+                    if (this.cancelPortalBtn) this.cancelPortalBtn.style.display = 'inline-block';
+                    return;
+                }
+
+                if (this.tempMsgDiv) {
+                    this.tempMsgDiv.innerText = "แพทย์: (กำลังถอดความเสียงด้วย AI...)";
+                }
+
+                try {
+                    const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+                    const formData = new FormData();
+                    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                    formData.append("file", audioBlob, `speech.${ext}`);
+
+                    const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/stt`, {
+                        method: "POST",
+                        body: formData,
+                        headers: { 'ngrok-skip-browser-warning': '1' }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const text = data.text ? data.text.trim() : "";
+                        if (text) {
+                            if (this.tempMsgDiv) {
+                                this.tempMsgDiv.innerText = "แพทย์: " + text;
+                            }
+                            this.sendViaWS(text);
+                        } else {
+                            throw new Error("Empty text returned from backend STT");
+                        }
+                    } else {
+                        throw new Error(`Server returned status ${response.status}`);
+                    }
+                } catch (sttErr) {
+                    console.warn("Backend STT failed, falling back to browser STT:", sttErr);
+                    this.useBrowserSTT = true;
+                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
+                    alert("ระบบถอดความเสียงคลาวด์ขัดข้องหรือไม่มีการตั้งค่ากุญแจ API ระบบจะสลับไปแปลงเสียงผ่านเบราว์เซอร์แทนโดยอัตโนมัติ");
+                    this.runBrowserSTT();
+                }
+            };
+
+            this.mediaRecorder.start();
+
+        } catch (err) {
+            console.warn("Microphone access or MediaRecorder failed, falling back to Web Speech API:", err);
+            this.useBrowserSTT = true;
+            this.runBrowserSTT();
+        }
+    }
+
+    runBrowserSTT() {
         if (window.hasOwnProperty('webkitSpeechRecognition')) {
             this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
@@ -2335,11 +2656,10 @@ class AIPatientSimulator extends HTMLElement {
 
             this.recognition.onstart = () => {
                 this.isRecording = true;
-                this.status.innerText = "ระบบกำลังรับเสียงซักประวัติ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
+                this.status.innerText = "ระบบกำลังรับเสียงด้วยเบราว์เซอร์ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
                 this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
                 this.micBtn.style.backgroundColor = "#dc3545";
                 
-                // Hide cancel button during recording
                 if (this.cancelPortalBtn) {
                     this.cancelPortalBtn.style.display = 'none';
                 }
@@ -2374,7 +2694,6 @@ class AIPatientSimulator extends HTMLElement {
                     if (this.tempMsgDiv) {
                         this.tempMsgDiv.remove();
                     }
-                    // Restore cancel button at 0 turns if recording was cancelled/empty
                     if (this.cancelPortalBtn) {
                         this.cancelPortalBtn.style.display = 'inline-block';
                     }
@@ -2391,6 +2710,10 @@ class AIPatientSimulator extends HTMLElement {
         // Enforce hiding cancel button permanently upon sending the first query
         if (this.cancelPortalBtn) {
             this.cancelPortalBtn.style.display = 'none';
+        }
+        
+        if (text !== "__END_SESSION__") {
+            this.showTypingIndicator();
         }
         
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -2416,6 +2739,28 @@ class AIPatientSimulator extends HTMLElement {
                 }
             }));
         }
+    }
+
+    showTypingIndicator() {
+        this.hideTypingIndicator();
+        
+        const indicatorDiv = document.createElement('div');
+        indicatorDiv.className = 'msg patient typing-indicator';
+        indicatorDiv.innerHTML = `
+            <span>คนไข้: </span>
+            <div class="typing-indicator-dots" style="display: inline-flex; align-items: center; gap: 4px; vertical-align: middle;">
+                <div class="typing-indicator-dot"></div>
+                <div class="typing-indicator-dot"></div>
+                <div class="typing-indicator-dot"></div>
+            </div>
+        `;
+        this.chatBox.appendChild(indicatorDiv);
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+    }
+
+    hideTypingIndicator() {
+        const indicators = this.shadowDOM.querySelectorAll('.typing-indicator');
+        indicators.forEach(ind => ind.remove());
     }
 
     showSessionEndedState() {
@@ -2584,9 +2929,113 @@ class AIPatientSimulator extends HTMLElement {
         if (this.isSpeaking || this.ttsQueue.length === 0) return;
         this.isSpeaking = true;
         const text = this.ttsQueue.shift();
+
+        if (this.useBrowserTTS) {
+            this.runBrowserTTS(text);
+            return;
+        }
+
+        try {
+            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+            
+            const params = new URLSearchParams({
+                text: text,
+                gender: this.currentPatientGender || "female",
+                pleasure: this.pad ? this.pad.p : 0.0,
+                arousal: this.pad ? this.pad.a : 0.0,
+                dominance: this.pad ? this.pad.d : 0.0
+            });
+            
+            const ttsUrl = `${fetchBase.replace(/\/$/, '')}/api/tts?${params.toString()}`;
+            
+            const audio = new Audio(ttsUrl);
+            this.activeAudio = audio;
+            
+            let speed = 1.0;
+            if (this.pad) {
+                const p = parseFloat(this.pad.p);
+                const a = parseFloat(this.pad.a);
+                if (p < -0.3) {
+                    speed = 0.85;
+                } else if (p < -0.5) {
+                    speed = 0.8;
+                } else if (a > 0.4 && p < 0) {
+                    speed = 1.15;
+                }
+            }
+            audio.playbackRate = speed;
+
+            audio.onended = () => {
+                this.activeAudio = null;
+                this.isSpeaking = false;
+                this.processTTSQueue();
+            };
+
+            audio.onerror = (e) => {
+                console.warn("Backend TTS playback failed, falling back to Browser TTS:", e);
+                this.useBrowserTTS = true;
+                this.activeAudio = null;
+                this.runBrowserTTS(text);
+            };
+
+            audio.play().catch(err => {
+                console.warn("Audio autoplay blocked or failed, falling back to Browser TTS:", err);
+                this.useBrowserTTS = true;
+                this.activeAudio = null;
+                this.runBrowserTTS(text);
+            });
+
+        } catch (err) {
+            console.warn("Backend TTS call failed, falling back to Browser TTS:", err);
+            this.useBrowserTTS = true;
+            this.activeAudio = null;
+            this.runBrowserTTS(text);
+        }
+    }
+
+    runBrowserTTS(text) {
         if (typeof SpeechSynthesisUtterance !== 'undefined' && window.speechSynthesis) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = "th-TH";
+            
+            try {
+                const voices = window.speechSynthesis.getVoices();
+                const thVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.replace('_', '-').startsWith('th-'));
+                if (thVoices.length > 0) {
+                    const gender = (this.currentPatientGender || 'female').toLowerCase();
+                    let matchedVoice = null;
+                    if (gender === 'male' || gender === 'elderly_male') {
+                        matchedVoice = thVoices.find(v => 
+                            v.name.toLowerCase().includes('niwat') || 
+                            v.name.toLowerCase().includes('male') || 
+                            v.name.toLowerCase().includes('man') ||
+                            v.name.toLowerCase().includes('pattara')
+                        );
+                    } else {
+                        matchedVoice = thVoices.find(v => 
+                            v.name.toLowerCase().includes('premwadee') || 
+                            v.name.toLowerCase().includes('achara') || 
+                            v.name.toLowerCase().includes('female') || 
+                            v.name.toLowerCase().includes('woman') || 
+                            v.name.toLowerCase().includes('google')
+                        );
+                    }
+                    if (!matchedVoice) {
+                        matchedVoice = thVoices[0];
+                    }
+                    utterance.voice = matchedVoice;
+                }
+            } catch (e) {
+                console.error("Error setting speech voice:", e);
+            }
+
+            if (this.pad) {
+                const p = parseFloat(this.pad.p);
+                const a = parseFloat(this.pad.a);
+                if (p < -0.3) utterance.rate = 0.85;
+                else if (a > 0.4 && p < 0) utterance.rate = 1.15;
+            }
+
             utterance.onend = () => { 
                 this.isSpeaking = false; 
                 this.processTTSQueue(); 
@@ -3462,6 +3911,7 @@ class AIPatientAdmin extends HTMLElement {
             this.editChiefComplaint.value = "";
             
             const sampleRecord = {
+                "gender": "female",
                 "symptom_detail": "ระบุอาการละเอียด",
                 "severity": "ปานกลาง",
                 "onset": "เริ่มเป็นเมื่อไร",

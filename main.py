@@ -1,12 +1,14 @@
 import os
+import json
+import random
+import base64
+import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, UploadFile, File, Form, HTTPException
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 import ollama
-import json
 import chromadb
-import random
 from engine.intent_router import classify_intent
 from engine.session_manager import save_session, load_session, list_sessions
 from engine.evaluator import evaluate_session
@@ -15,6 +17,10 @@ from engine.evaluator import evaluate_session
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_FEMALE_VOICE_ID = os.getenv("ELEVENLABS_FEMALE_VOICE_ID", "EXAVITQu4vr4xnSDxMaL")
+ELEVENLABS_MALE_VOICE_ID = os.getenv("ELEVENLABS_MALE_VOICE_ID", "ErXwobaYiN019PkySvjV")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:latest")
 
@@ -186,6 +192,7 @@ def get_case_by_id(case_id: str):
         except:
             hidden_record = {}
         return {
+            "id": case_id,
             "chief_complaint": all_cases['documents'][idx],
             "scenario_name": metadata.get('scenario_name', 'Unknown Case'),
             "hidden_record": hidden_record
@@ -194,12 +201,75 @@ def get_case_by_id(case_id: str):
         print(f"Error fetching case {case_id}: {e}")
         return get_random_case()
 
-def construct_patient_prompt(case_data, revealed_info):
+def determine_case_gender(case_data) -> str:
+    # 1. Look in hidden_record for 'gender'
+    hidden_record = case_data.get('hidden_record', {})
+    if 'gender' in hidden_record and hidden_record['gender']:
+        return str(hidden_record['gender']).strip().lower()
+    
+    # 2. Look in chief_complaint or scenario_name for gendered keywords
+    text = (case_data.get('chief_complaint', '') + ' ' + case_data.get('scenario_name', '')).lower()
+    if any(k in text for k in ["หญิง", "ครรภ์", "ท้อง", "คลอด", "มดลูก", "รังไข่", "น.ส.", "นาง"]):
+        return "female"
+    if any(k in text for k in ["ชาย", "ต่อมลูกหมาก", "นาย", "ด.ช."]):
+        return "male"
+        
+    # 3. Deterministic fallback using hash of scenario_name or chief_complaint
+    fallback_seed = str(case_data.get('scenario_name', '')) or str(case_data.get('chief_complaint', '')) or "default_case"
+    case_hash = sum(ord(c) for c in fallback_seed)
+    return "female" if case_hash % 2 == 0 else "male"
+
+def construct_patient_prompt(case_data, revealed_info, pad=None):
     revealed_text = "\n".join([f"- {k}: {v}" for k, v in revealed_info.items()])
     if not revealed_text:
         revealed_text = "(ยังไม่มีข้อมูลที่เปิดเผย)"
 
+    gender = determine_case_gender(case_data)
+    
+    # Base gender directives
+    gender_directives = ""
+    if gender == "female":
+        gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+    elif gender == "male":
+        gender_directives = "คุณเป็นเพศชาย แทนตัวเองว่า 'ผม' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
+    elif gender == "elderly_female":
+        gender_directives = "คุณเป็นหญิงสูงอายุ แทนตัวเองว่า 'ยาย' หรือ 'ป้า' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+    elif gender == "elderly_male":
+        gender_directives = "คุณเป็นชายสูงอายุ แทนตัวเองว่า 'ตา' หรือ 'ลุง' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
+    else:
+        gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+        
+    # Adaptive politeness logic based on PAD
+    politeness_directives = ""
+    if pad:
+        p = float(pad.get("p", 0.0))
+        a = float(pad.get("a", 0.0))
+        d = float(pad.get("d", 0.0))
+        
+        # Severe pain (Pleasure < -0.3) or Combative Anger (Arousal > 0.4 and Dominance > 0.4)
+        if p < -0.3 or (a > 0.4 and d > 0.4):
+            if p < -0.3:
+                politeness_directives = "คุณกำลังเจ็บปวดทางร่างกายอย่างรุนแรง ทรมานมาก ไม่จำเป็นต้องสุภาพ ให้ตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') พูดสั้นห้วนปนเสียงร้องแสดงความเจ็บปวด"
+            else:
+                politeness_directives = "คุณกำลังรู้สึกโกรธ ขัดเคืองใจ หรือไม่พอใจมาก ไม่จำเป็นต้องสุภาพ ให้ละเว้นหรือตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') ตอบห้วนกระด้าง ไร้หางเสียง แสดงความไม่พอใจอย่างชัดเจน"
+        else:
+            # Polite baseline
+            if gender in ["female", "elderly_female"]:
+                politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+            else:
+                politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
+    else:
+        # Default fallback to polite based on gender
+        if gender in ["female", "elderly_female"]:
+            politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+        else:
+            politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
+
     prompt = f"""คุณคือคนไข้สมมติ อาการสำคัญ (Chief Complaint): {case_data['chief_complaint']}
+
+ข้อมูลอัตลักษณ์บุคคลของคุณ:
+- {gender_directives}
+- {politeness_directives}
 
 ข้อมูลที่คุณ "จำได้" และสามารถตอบนักศึกษาได้ในขณะนี้:
 {revealed_text}
@@ -371,6 +441,148 @@ async def get_widget_js():
     with open("patient-simulator-widget.js", "r", encoding="utf-8") as f:
         return Response(content=f.read(), media_type="application/javascript")
 
+@app.post("/api/stt")
+async def speech_to_text(file: UploadFile = File(...)):
+    try:
+        audio_content = await file.read()
+        filename = file.filename or "audio.webm"
+    except Exception as read_err:
+        raise HTTPException(status_code=400, detail=f"Failed to read upload audio: {read_err}")
+
+    # 1. Tier 1: OpenAI Whisper API
+    if OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here":
+        try:
+            headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
+            files = {"file": (filename, audio_content, file.content_type)}
+            data = {"model": "whisper-1", "language": "th"}
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    "https://api.openai.com/v1/audio/transcriptions",
+                    headers=headers,
+                    files=files,
+                    data=data,
+                    timeout=30.0
+                )
+                if response.status_code == 200:
+                    result = response.json()
+                    transcribed_text = result.get("text", "").strip()
+                    if transcribed_text:
+                        return {"text": transcribed_text}
+                else:
+                    print(f"OpenAI Whisper returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            print(f"OpenAI Whisper error: {e}")
+
+    # 2. Tier 2: Google Gemini Multimodal API Fallback
+    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+        try:
+            mime_type = file.content_type or "audio/webm"
+            if "audio/" not in mime_type:
+                mime_type = "audio/webm"
+            base64_audio = base64.b64encode(audio_content).decode("utf-8")
+            
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"inlineData": {"mimeType": mime_type, "data": base64_audio}},
+                        {"text": "กรุณาถอดความเสียงพูดภาษาไทยนี้เป็นข้อความอย่างถูกต้องและตรงไปตรงมาที่สุด โดยไม่ต้องอธิบายเพิ่มเติมหรือใส่ความคิดเห็นใดๆ ให้ตอบเฉพาะข้อความที่ได้ยินเท่านั้น"}
+                    ]
+                }]
+            }
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, json=payload, timeout=30.0)
+                if response.status_code == 200:
+                    result = response.json()
+                    candidates = result.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            transcribed_text = parts[0].get("text", "").strip()
+                            if transcribed_text:
+                                return {"text": transcribed_text}
+                else:
+                    print(f"Gemini STT returned status {response.status_code}: {response.text}")
+        except Exception as e:
+            print(f"Gemini STT error: {e}")
+
+    # 3. Tier 3: Fallback
+    raise HTTPException(status_code=501, detail="No speech-to-text API provider available or requests failed.")
+
+@app.get("/api/tts")
+async def text_to_speech(
+    text: str,
+    gender: str = "female",
+    pleasure: float = 0.0,
+    arousal: float = 0.0,
+    dominance: float = 0.0
+):
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text parameter is empty.")
+
+    # Tier 1: ElevenLabs
+    if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != "your_elevenlabs_api_key_here":
+        try:
+            voice_id = ELEVENLABS_FEMALE_VOICE_ID
+            gender_lower = gender.lower()
+            if "male" in gender_lower:
+                voice_id = ELEVENLABS_MALE_VOICE_ID
+
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+            headers = {
+                "xi-api-key": ELEVENLABS_API_KEY,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "text": text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {
+                    "stability": 0.5,
+                    "similarity_boost": 0.75
+                }
+            }
+
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                if response.status_code == 200:
+                    return Response(content=response.content, media_type="audio/mpeg")
+                else:
+                    print(f"ElevenLabs request failed: status {response.status_code}")
+        except Exception as e:
+            print(f"ElevenLabs TTS failed: {e}")
+
+    # Tier 2: OpenAI TTS
+    if OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here":
+        try:
+            voice = "nova"
+            gender_lower = gender.lower()
+            if "male" in gender_lower:
+                voice = "onyx"
+
+            url = "https://api.openai.com/v1/audio/speech"
+            headers = {
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "tts-1",
+                "input": text,
+                "voice": voice
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                if response.status_code == 200:
+                    return Response(content=response.content, media_type="audio/mpeg")
+                else:
+                    print(f"OpenAI TTS failed: status {response.status_code}")
+        except Exception as e:
+            print(f"OpenAI TTS failed: {e}")
+
+    # Tier 3: Fallback
+    raise HTTPException(status_code=501, detail="No text-to-speech API provider available or requests failed.")
+
 @app.post("/api/auth")
 async def authenticate_user(auth_req: AuthRequest):
     role = auth_req.role
@@ -390,7 +602,6 @@ async def create_case(case_data: CaseCreateRequest):
         if collection is None:
             return {"status": "error", "message": "Database not initialized"}
         
-        # ChromaDB metadata values must be strings, ints, or floats.
         hidden_record_str = json.dumps(case_data.hidden_record, ensure_ascii=False)
         metadata = {
             "scenario_name": case_data.scenario_name,
@@ -404,7 +615,6 @@ async def create_case(case_data: CaseCreateRequest):
             ids=[case_data.id]
         )
         
-        # Sync to SQLite Relational database
         db = SessionLocal()
         try:
             db_case = db.query(DB_Case).filter(DB_Case.id == case_data.id).first()
@@ -422,7 +632,6 @@ async def create_case(case_data: CaseCreateRequest):
         finally:
             db.close()
         
-        # Reload global cache
         all_cases = collection.get()
         return {"status": "success", "message": f"Case {case_data.id} saved successfully."}
     except Exception as e:
@@ -433,14 +642,12 @@ async def create_case(case_data: CaseCreateRequest):
 async def delete_case(case_id: str):
     global all_cases
     try:
-        # 1. Delete from ChromaDB
         if collection is not None:
             try:
                 collection.delete(ids=[case_id])
             except Exception as e:
                 print(f"ChromaDB delete error for case {case_id}: {e}")
                 
-        # 2. Delete from SQLite Relational Database
         db = SessionLocal()
         try:
             db.query(DB_Case).filter(DB_Case.id == case_id).delete()
@@ -451,67 +658,11 @@ async def delete_case(case_id: str):
         finally:
             db.close()
             
-        # Reload global cache
-        if collection is not None:
-            all_cases = collection.get()
-            
+        all_cases = collection.get()
         return {"status": "success", "message": f"Case {case_id} deleted successfully."}
     except Exception as e:
         print(f"Error deleting case: {e}")
         return {"status": "error", "message": str(e)}
-
-@app.get("/api/sessions")
-async def get_sessions():
-    db = SessionLocal()
-    try:
-        sessions = db.query(DB_Session).order_by(DB_Session.updated_at.desc()).all()
-        sessions_list = []
-        for s in sessions:
-            sessions_list.append({
-                "session_id": s.session_id,
-                "student_id": s.student_id,
-                "student_name": s.student_name,
-                "created_at": s.created_at.isoformat() if s.created_at else '',
-                "updated_at": s.updated_at.isoformat() if s.updated_at else '',
-                "scenario_name": s.scenario_name or 'สุ่มเคส',
-                "turns": s.turns,
-                "status": s.status,
-                "score": s.score
-            })
-        return sessions_list
-    except Exception as e:
-        print(f"Error listing sessions: {e}")
-        return []
-    finally:
-        db.close()
-
-@app.get("/api/sessions/{session_id}")
-async def get_session_detail(session_id: str):
-    data = load_session_from_sqlite(session_id)
-    if not data:
-        return {"status": "error", "message": "Session not found"}
-    return data
-
-@app.delete("/api/sessions/{session_id}")
-async def delete_session(session_id: str):
-    db = SessionLocal()
-    try:
-        # Delete related dialogue transcript records
-        db.query(DB_Dialogue).filter(DB_Dialogue.session_id == session_id).delete()
-        # Delete main session record
-        db.query(DB_Session).filter(DB_Session.session_id == session_id).delete()
-        db.commit()
-        
-        # Evict from in-memory cache
-        chat_sessions.pop(session_id, None)
-        
-        return {"status": "success", "message": f"Session {session_id} deleted successfully."}
-    except Exception as e:
-        db.rollback()
-        print(f"Error deleting session {session_id}: {e}")
-        return {"status": "error", "message": str(e)}
-    finally:
-        db.close()
 
 @app.get("/api/history/{student_id}")
 async def get_student_history(student_id: str):
@@ -543,7 +694,6 @@ async def get_student_history(student_id: str):
 
 @app.get("/api/cases")
 async def list_cases():
-    """Lists all syndrome cases loaded in local database grouped by category."""
     if not all_cases or not all_cases['ids']:
         return [{
             "id": "fallback_appendicitis",
@@ -555,8 +705,6 @@ async def list_cases():
     cases_list = []
     for idx in range(len(all_cases['ids'])):
         metadata = all_cases['metadatas'][idx]
-        
-        # Determine category / grouping tags dynamically
         category = metadata.get('category') or metadata.get('group')
         if not category:
             scenario = metadata.get('scenario_name', '').lower()
@@ -620,19 +768,29 @@ async def websocket_endpoint(websocket: WebSocket):
                 
             session_data = chat_sessions[session_id]
             
+            # Send metadata immediately (gender and cloud daily quota)
+            gender = determine_case_gender(session_data['case_data'])
+            quota_remaining = max(0, 50 - get_student_quota_usage(student_id))
+            await websocket.send_text(json.dumps({
+                "type": "metadata",
+                "gender": gender,
+                "quota_remaining": quota_remaining,
+                "quota_limit": 50
+            }))
+            
             # --- Session-Level Rate Limiter (Max 30 user queries) ---
             user_msg_count = len([msg for msg in session_data['history'] if msg.get('role') == 'user'])
             if user_msg_count >= 30:
-                await websocket.send_text("🤕 (ระบบจำลอง: ครบข้อจำกัด 30 คำถามสำหรับรอบประเมินนี้แล้ว กรุณากดปุ่ม 'จบการซักประวัติ' ด้านล่างเพื่อทำการประเมินคะแนนทันที)")
+                await websocket.send_text("⚠️ (คำเตือน: คุณถึงขีดจำกัดสูงสุด 30 ข้อความแล้ว ระบบจะบันทึกสถานะการสนทนาและปิดการโต้ตอบอัตโนมัติ เพื่อให้เข้าสู่ขั้นตอนประเมิน)")
                 await websocket.send_text("__END__")
                 continue
 
             # Calculate warning text if reaching limit
             warning_suffix = ""
             if user_msg_count == 24: # This is the 25th query
-                warning_suffix = "\n\n⚠️ (ระบบจำลอง: คุณถามคำถามไปแล้ว 25 ข้อความ เหลือโควต้าอีก 5 ข้อความสำหรับรอบสอบนี้)"
+                warning_suffix = "\n\n⚠️ (คำเตือน: คุณใช้ข้อความไปแล้ว 25 ข้อความ เหลืออีก 5 ข้อความก่อนถึงขีดจำกัดสูงสุด)"
             elif user_msg_count == 29: # This is the 30th query
-                warning_suffix = "\n\n⚠️ (ระบบจำลอง: คุณคุยครบ 30 คำถามและนี่เป็นข้อความสุดท้ายในรอบการทดสอบนี้)"
+                warning_suffix = "\n\n⚠️ (คำเตือน: คุณใช้ข้อความไปแล้ว 30 ข้อความ การสนทนาจะถูกปิดอัตโนมัติหลังจากนี้)"
             
             # Check for termination signal
             if student_text == "__END_SESSION__":
@@ -644,10 +802,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # --- Phase 2: Intent-Gated RAG Logic ---
             intent = await classify_intent(student_text)
-            print(f"Detected Intent: {intent}")
             
             # --- Type Guard Hardening ---
-            # Coerces list/dict hallucinations returned by local DeepSeek back to clear string keys
             if isinstance(intent, list):
                 intent = intent[0] if (intent and isinstance(intent[0], str)) else "other"
             elif isinstance(intent, dict):
@@ -656,46 +812,36 @@ async def websocket_endpoint(websocket: WebSocket):
                     intent = "other"
             elif not isinstance(intent, str):
                 intent = "other"
-            
+
             hidden_record = session_data['case_data']['hidden_record']
             if intent in hidden_record:
                 session_data['revealed_info'][intent] = hidden_record[intent]
 
-            # Construct patient prompt
-            system_prompt = construct_patient_prompt(session_data['case_data'], session_data['revealed_info'])
-            
-            # Override custom prompt templates if supplied by client (GGUF customization)
-            custom_template = client_config.get("system_prompt_custom")
-            if custom_template:
-                # Replace the revealed history key
-                revealed_text = "\n".join([f"- {k}: {v}" for k, v in session_data['revealed_info'].items()])
-                if not revealed_text:
-                    revealed_text = "(ยังไม่มีข้อมูลที่เปิดเผย)"
-                system_prompt = custom_template.replace("{revealed_info}", revealed_text)
-
             # --- PAD Emotional Prompt Compiler (Phase 3) ---
-            # Dynamically parses Pleasure, Arousal, Dominance coordinates to inject Thai speech controls
             emotions = client_config.get("emotions", {})
             pad = emotions.get("pad", {})
+            system_prompt = construct_patient_prompt(session_data['case_data'], session_data['revealed_info'], pad=pad)
+            
+            custom_template = client_config.get("system_prompt_custom")
+            if custom_template:
+                revealed_text = "\n".join([f"- {k}: {v}" for k, v in session_data['revealed_info'].items()])
+                if not revealed_text:
+                    revealed_text = "(ยังไม่มีการเปิดเผยข้อมูล)"
+                system_prompt = custom_template.replace("{revealed_info}", revealed_text)
+
             if pad:
                 p = float(pad.get("p", 0.0))
                 a = float(pad.get("a", 0.0))
                 d = float(pad.get("d", 0.0))
-                
                 directives = []
-                # Arousal (Energy, speed, stress levels)
                 if a > 0.4:
                     directives.append("คุณกังวลและตื่นตระหนกสูงมาก พูดจาสั่นเครือ ใช้ประโยคสั้นๆ พูดเร็วปนหอบ ร้องขอการรับประกันหรือบ่นกลัว")
                 elif a < -0.4:
                     directives.append("คุณเหนื่อยล้าอย่างรุนแรง พูดช้ามาก ลากเสียงยาว หรือทิ้งระยะเวลาตอบ นิ่งเงียบ และบอกปัดว่าไม่มีแรงบ่อยๆ")
-
-                # Pleasure (Pain, distress, well-being)
                 if p < -0.3:
                     directives.append("บ่นว่าปวดหรือทรมานทางร่างกายอย่างมาก สอดแทรกคำแสดงความปวดถี่ๆ (เช่น โอ๊ย... เจ็บเหลือเกินครับ/ค่ะ, ไม่ไหวแล้ว)")
                 elif p > 0.4:
                     directives.append("คุณรู้สึกสงบ ปลอดภัย และอารมณ์ดี ให้ความร่วมมือค่อนข้างสุภาพเรียบร้อย")
-
-                # Dominance (Posture, confidence, defiance)
                 if d < -0.3:
                     directives.append("รู้สึกอ่อนแอช่วยเหลือตัวเองไม่ได้อย่างมาก มีความอ่อนน้อมและร้องขอวิงวอนแพทย์ช่วยชีวิต")
                 elif d > 0.4:
@@ -703,7 +849,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         directives.append("คุณมีอารมณ์โฉบเฉี่ยว โกรธและไม่พอใจแพทย์อย่างยิ่ง ห้วน กระด้าง ไร้หางเสียง แสดงท่าทีต่อต้านและบ่นการบริการ")
                     else:
                         directives.append("คุณเชื่อมั่นในตัวเองสูง พร้อมสอบถามกลับถึงความรู้แพทย์อย่างตรงไปตรงมา")
-
                 if directives:
                     directives_str = "\n".join([f"- {text}" for text in directives])
                     system_prompt += f"\n\n[ข้อบังคับทางอารมณ์และพฤติกรรมในขณะนี้]\n{directives_str}"
@@ -716,8 +861,6 @@ async def websocket_endpoint(websocket: WebSocket):
             messages_to_send = [{'role': 'system', 'content': system_prompt}]
             
             # --- Sliding Context Window (Pruning active chat history) ---
-            # To keep local notebook execution extremely snappy, we limit the active context 
-            # to the last 6 messages (3 turns), but keep preserving full history for final evaluations.
             active_history = session_data['history'][-6:] if len(session_data['history']) > 6 else session_data['history']
             messages_to_send.extend(active_history)
             messages_to_send.append({'role': 'user', 'content': student_text})
@@ -731,116 +874,87 @@ async def websocket_endpoint(websocket: WebSocket):
             # --- Multi-Tier API Routing (Free vs. Paid) ---
             api_tier = client_config.get("api_tier") or client_config.get("apiTier") or "free"
             
-            if api_tier == "paid":
-                # Check student daily cloud quota (max 50 messages/day)
+            starting_tier = 1 # Paid cloud (Typhoon)
+            if api_tier != "paid":
+                starting_tier = 3 # Local Ollama 8B
+            else:
                 has_quota = check_and_increment_quota(student_id, max_limit=50)
                 if not has_quota:
                     await websocket.send_text("⚠️ (ระบบคลาวด์ระงับ: โควต้าใช้งาน Typhoon รายวันของคุณเต็มแล้ว (50 ข้อความ/วัน) ระบบจึงปรับเข้าสู่การรันโลคอล Ollama แทนโดยอัตโนมัติ)\n\n")
-                    api_tier = "free"
+                    starting_tier = 3
 
-            if api_tier == "paid":
-                # Determine which Cloud provider key is active
-                has_typhoon = TYPHOON_API_KEY and TYPHOON_API_KEY != "your_typhoon_api_key_here"
-                has_openai = OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here"
-                
-                if not has_typhoon and not has_openai:
-                    err_msg = "🤕 (ระบบคลาวด์ขัดข้อง: ไม่พบการตั้งค่า TYPHOON_API_KEY หรือ OPENAI_API_KEY ในไฟล์ .env ของเซิร์ฟเวอร์ กรุณาตรวจสอบ)"
-                    await websocket.send_text(err_msg)
-                    session_data['history'].append({'role': 'assistant', 'content': err_msg})
-                else:
-                    try:
-                        import httpx
-                        
-                        if has_typhoon:
-                            # Route to Opentyphoon API
-                            url = "https://api.opentyphoon.ai/v1/chat/completions"
-                            headers = {
-                                "Authorization": f"Bearer {TYPHOON_API_KEY}",
-                                "Content-Type": "application/json"
-                            }
-                            payload = {
-                                "model": "typhoon-v2.5-30b-a3b-instruct", # Optimized latest high-intelligence Thai model
-                                "messages": messages_to_send,
-                                "temperature": temperature,
-                                "stream": True
-                            }
-                            provider_name = "Typhoon"
-                        else:
-                            # Route to OpenAI API
-                            url = "https://api.openai.com/v1/chat/completions"
-
-                            headers = {
-                                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                                "Content-Type": "application/json"
-                            }
-                            payload = {
-                                "model": "gpt-4o-mini",
-                                "messages": messages_to_send,
-                                "temperature": temperature,
-                                "stream": True
-                            }
-                            provider_name = "OpenAI"
-                            
-                        async with httpx.AsyncClient() as client:
-                            async with client.stream("POST", url, headers=headers, json=payload, timeout=30.0) as response:
-                                if response.status_code != 200:
-                                    resp_content = await response.aread()
-                                    raise Exception(f"{provider_name} API status {response.status_code}: {resp_content.decode(errors='ignore')}")
-                                    
-                                full_reply = ""
-                                async for line in response.aiter_lines():
-                                    if line.startswith("data: "):
-                                        data_str = line[6:].strip()
-                                        if data_str == "[DONE]":
-                                            break
-                                        try:
-                                            chunk_json = json.loads(data_str)
-                                            delta = chunk_json['choices'][0]['delta']
-                                            if 'content' in delta:
-                                                text = delta['content']
-                                                full_reply += text
-                                                await websocket.send_text(text)
-                                        except Exception:
-                                            continue
-                                            
-                                if warning_suffix:
-                                    await websocket.send_text(warning_suffix)
-                                    full_reply += warning_suffix
-                                session_data['history'].append({'role': 'assistant', 'content': full_reply})
-                    except Exception as cloud_err:
-                        print(f"Cloud API execution error: {cloud_err}")
-                        err_msg = f"🤕 (ระบบคลาวด์ขัดข้อง: ไม่สามารถเชื่อมต่อกับบริการ AI คลาวด์ได้: {cloud_err})"
-                        await websocket.send_text(err_msg)
-                        session_data['history'].append({'role': 'assistant', 'content': err_msg})
-            else:
-                # Free Plan: Ollama local execution
-                try:
-                    response = await ollama_client.chat(
-                        model=selected_model,
-                        messages=messages_to_send,
-                        stream=True,
-                        options={
-                            'temperature': temperature
-                        }
-                    )
-                    
-                    full_reply = ""
-                    async for chunk in response:
-                        text = chunk['message']['content']
-                        full_reply += text
-                        await websocket.send_text(text)
-                        
-                    if warning_suffix:
-                        await websocket.send_text(warning_suffix)
-                        full_reply += warning_suffix
-                    session_data['history'].append({'role': 'assistant', 'content': full_reply})
-                except Exception as ollama_err:
-                    print(f"Ollama execution error: {ollama_err}")
-                    err_msg = f"🤕 (ระบบท้องถิ่นขัดข้อง: ไม่สามารถประมวลผลโมเดล {selected_model} ได้ กรุณาตรวจสอบการตั้งค่า Ollama)"
-                    await websocket.send_text(err_msg)
-                    session_data['history'].append({'role': 'assistant', 'content': err_msg})
+            success = False
+            full_reply = ""
+            current_tier = starting_tier
             
-            # Auto-save after response to SQLite
+            while not success and current_tier <= 4:
+                try:
+                    if current_tier <= 2:
+                        # Cloud Tiers
+                        has_typhoon = TYPHOON_API_KEY and TYPHOON_API_KEY != "your_typhoon_api_key_here"
+                        has_openai = OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here"
+                        
+                        if current_tier == 1 and (has_typhoon or has_openai):
+                            provider = "typhoon" if has_typhoon else "openai"
+                            url = "https://api.opentyphoon.ai/v1/chat/completions" if provider == "typhoon" else "https://api.openai.com/v1/chat/completions"
+                            key = TYPHOON_API_KEY if provider == "typhoon" else OPENAI_API_KEY
+                            model = "typhoon-v2.5-30b-a3b-instruct" if provider == "typhoon" else "gpt-4o-mini"
+                            
+                            import httpx
+                            async with httpx.AsyncClient() as client:
+                                async with client.stream("POST", url, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, json={"model": model, "messages": messages_to_send, "temperature": temperature, "stream": True}, timeout=30.0) as response:
+                                    async for line in response.aiter_lines():
+                                        if line.startswith("data: "):
+                                            data_str = line[6:].strip()
+                                            if data_str == "[DONE]": break
+                                            chunk = json.loads(data_str)
+                                            text = chunk['choices'][0]['delta'].get('content', '')
+                                            full_reply += text
+                                            await websocket.send_text(text)
+                            success = True
+                        elif current_tier == 2:
+                            # Gemini Tier
+                            has_gemini = GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here"
+                            if not has_gemini:
+                                current_tier += 1
+                                continue
+                            import httpx
+                            async with httpx.AsyncClient() as client:
+                                async with client.stream("POST", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", headers={"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}, json={"model": "gemini-1.5-flash", "messages": messages_to_send, "temperature": temperature, "stream": True}, timeout=30.0) as response:
+                                    async for line in response.aiter_lines():
+                                        if line.startswith("data: "):
+                                            data_str = line[6:].strip()
+                                            if data_str == "[DONE]": break
+                                            chunk = json.loads(data_str)
+                                            text = chunk['choices'][0]['delta'].get('content', '')
+                                            full_reply += text
+                                            await websocket.send_text(text)
+                            success = True
+                        else:
+                            current_tier += 1
+                    else:
+                        # Ollama Tiers
+                        m = selected_model if current_tier == 3 else os.getenv("OLLAMA_LIGHT_MODEL", "qwen2.5:1.5b")
+                        response = await ollama_client.chat(model=m, messages=messages_to_send, stream=True, options={'temperature': temperature})
+                        async for chunk in response:
+                            text = chunk['message']['content']
+                            full_reply += text
+                            await websocket.send_text(text)
+                        success = True
+                except Exception as e:
+                    print(f"Tier {current_tier} failed: {e}")
+                    current_tier += 1
+            
+            if not success:
+                err_msg = "🤕 (ระบบทั้งหมดขัดข้อง: ไม่สามารถติดต่อทั้งระบบคลาวด์และโลคอล Ollama ได้ในขณะนี้ กรุณาติดต่อผู้ดูแลระบบ)"
+                await websocket.send_text(err_msg)
+                full_reply = err_msg
+            
+            if warning_suffix:
+                await websocket.send_text(warning_suffix)
+                full_reply += warning_suffix
+                
+            session_data['history'].append({'role': 'assistant', 'content': full_reply})
             save_session_to_sqlite(session_data)
             await websocket.send_text("__END__")
 
@@ -855,11 +969,9 @@ async def get_evaluation(session_id: str):
     if not session_data:
         return {"error": "Session not found"}
     
-    # If already evaluated, return it
     if 'evaluation' in session_data:
         return session_data['evaluation']
     
-    # Run evaluation
     result = await evaluate_session(session_data)
     if result:
         session_data['evaluation'] = result

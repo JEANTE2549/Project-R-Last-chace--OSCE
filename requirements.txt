@@ -7,3 +7,4 @@ sentence-transformers
 httpx
 python-dotenv
 sqlalchemy
+python-multipart
