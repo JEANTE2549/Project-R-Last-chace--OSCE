@@ -95,7 +95,7 @@ app.add_middleware(
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # Initialize Ollama client globally for better performance and reliability
-ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)
+ollama_client = ollama.AsyncClient(host=OLLAMA_HOST, timeout=60.0)
 
 # --- 1. Database Connection ---
 print("กำลังเชื่อมต่อกับ medical_db (ChromaDB)...")
