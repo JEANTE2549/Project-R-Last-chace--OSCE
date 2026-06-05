@@ -29,8 +29,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = "sqlite:///./data/osce_platform.db"
-os.makedirs("./data", exist_ok=True)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/osce_platform.db")
+if DATABASE_URL.startswith("sqlite:///"):
+    db_path = DATABASE_URL.replace("sqlite:///", "")
+    db_dir = os.path.dirname(db_path)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -96,7 +100,8 @@ ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)
 # --- 1. Database Connection ---
 print("กำลังเชื่อมต่อกับ medical_db (ChromaDB)...")
 try:
-    db_client = chromadb.PersistentClient(path="./data/medical_db")
+    chroma_path = os.getenv("CHROMADB_PATH", "./data/medical_db")
+    db_client = chromadb.PersistentClient(path=chroma_path)
     collection = db_client.get_collection("sor_ror_wor_cases")
     all_cases = collection.get()
     print(f"โหลดข้อมูลจาก ChromaDB สำเร็จ {len(all_cases['ids'])} เคส")
