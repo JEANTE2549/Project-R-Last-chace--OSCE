@@ -104,6 +104,14 @@
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
+        // Auto-clear stale local loopback URL in localStorage if we are on a public host
+        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' && !window.location.hostname.includes('ngrok')) {
+            const savedUrl = localStorage.getItem('osce_server_url');
+            if (savedUrl && (savedUrl.includes('127.0.0.1') || savedUrl.includes('localhost'))) {
+                localStorage.removeItem('osce_server_url');
+            }
+        }
+
         // Match current protocol-aware connection or fallback to local backend (http://127.0.0.1:8000) if hosted statically on GitHub Pages or as a local file
         let serverUrl = localStorage.getItem('osce_server_url') || window.location.origin;
         if ((window.location.hostname.includes('github.io') || window.location.protocol === 'file:') && !localStorage.getItem('osce_server_url')) {
