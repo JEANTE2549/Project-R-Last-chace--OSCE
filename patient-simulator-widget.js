@@ -34,11 +34,6 @@ class AIPatientSimulator extends HTMLElement {
         this.isSpeaking = false;
         this.sentenceBuffer = "";
         this.currentPatientGender = "female";
-        this.mediaRecorder = null;
-        this.audioChunks = [];
-        this.useBrowserSTT = false;
-        this.useBrowserTTS = false;
-        this.activeAudio = null;
     }
 
     connectedCallback() {
@@ -2408,12 +2403,6 @@ class AIPatientSimulator extends HTMLElement {
             this.socket.close();
             this.socket = null;
         }
-        if (this.activeAudio) {
-            try {
-                this.activeAudio.pause();
-            } catch (e) {}
-            this.activeAudio = null;
-        }
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
@@ -2529,123 +2518,12 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
-    async toggleDictation() {
+    toggleDictation() {
         if (this.isRecording) {
-            if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-                this.mediaRecorder.stop();
-            } else if (this.recognition) {
-                this.recognition.stop();
-            }
+            if (this.recognition) this.recognition.stop();
             return;
         }
 
-        if (this.useBrowserSTT) {
-            this.runBrowserSTT();
-            return;
-        }
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.audioChunks = [];
-            
-            let options = {};
-            if (MediaRecorder.isTypeSupported('audio/webm')) {
-                options = { mimeType: 'audio/webm' };
-            } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-                options = { mimeType: 'audio/mp4' };
-            }
-
-            this.mediaRecorder = new MediaRecorder(stream, options);
-            
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data && event.data.size > 0) {
-                    this.audioChunks.push(event.data);
-                }
-            };
-
-            this.mediaRecorder.onstart = () => {
-                this.isRecording = true;
-                this.status.innerText = "กำลังบันทึกเสียงพูดของคุณ (คลิกอีกครั้งเมื่อพูดเสร็จ)...";
-                this.micBtn.innerText = "เสร็จสิ้นการพูด";
-                this.micBtn.style.backgroundColor = "#dc3545";
-                
-                if (this.cancelPortalBtn) {
-                    this.cancelPortalBtn.style.display = 'none';
-                }
-
-                this.tempMsgDiv = document.createElement('div');
-                this.tempMsgDiv.className = 'msg user';
-                this.tempMsgDiv.innerText = "แพทย์: กำลังฟัง...";
-                this.chatBox.appendChild(this.tempMsgDiv);
-                this.chatBox.scrollTop = this.chatBox.scrollHeight;
-                this.currentPatientMsgDiv = null;
-            };
-
-            this.mediaRecorder.onstop = async () => {
-                this.isRecording = false;
-                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
-                this.micBtn.style.backgroundColor = "#0d6efd";
-                
-                stream.getTracks().forEach(track => track.stop());
-
-                const mimeType = this.mediaRecorder.mimeType || "audio/webm";
-                const audioBlob = new Blob(this.audioChunks, { type: mimeType });
-                
-                if (audioBlob.size < 1000) {
-                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
-                    if (this.cancelPortalBtn) this.cancelPortalBtn.style.display = 'inline-block';
-                    return;
-                }
-
-                if (this.tempMsgDiv) {
-                    this.tempMsgDiv.innerText = "แพทย์: (กำลังถอดความเสียงด้วย AI...)";
-                }
-
-                try {
-                    const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-                    const formData = new FormData();
-                    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                    formData.append("file", audioBlob, `speech.${ext}`);
-
-                    const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/stt`, {
-                        method: "POST",
-                        body: formData,
-                        headers: { 'ngrok-skip-browser-warning': '1' }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        const text = data.text ? data.text.trim() : "";
-                        if (text) {
-                            if (this.tempMsgDiv) {
-                                this.tempMsgDiv.innerText = "แพทย์: " + text;
-                            }
-                            this.sendViaWS(text);
-                        } else {
-                            throw new Error("Empty text returned from backend STT");
-                        }
-                    } else {
-                        throw new Error(`Server returned status ${response.status}`);
-                    }
-                } catch (sttErr) {
-                    console.warn("Backend STT failed, falling back to browser STT:", sttErr);
-                    this.useBrowserSTT = true;
-                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
-                    alert("ระบบถอดความเสียงคลาวด์ขัดข้องหรือไม่มีการตั้งค่ากุญแจ API ระบบจะสลับไปแปลงเสียงผ่านเบราว์เซอร์แทนโดยอัตโนมัติ");
-                    this.runBrowserSTT();
-                }
-            };
-
-            this.mediaRecorder.start();
-
-        } catch (err) {
-            console.warn("Microphone access or MediaRecorder failed, falling back to Web Speech API:", err);
-            this.useBrowserSTT = true;
-            this.runBrowserSTT();
-        }
-    }
-
-    runBrowserSTT() {
         if (window.hasOwnProperty('webkitSpeechRecognition')) {
             this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
@@ -2656,10 +2534,11 @@ class AIPatientSimulator extends HTMLElement {
 
             this.recognition.onstart = () => {
                 this.isRecording = true;
-                this.status.innerText = "ระบบกำลังรับเสียงด้วยเบราว์เซอร์ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
+                this.status.innerText = "ระบบกำลังรับเสียงซักประวัติ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
                 this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
                 this.micBtn.style.backgroundColor = "#dc3545";
                 
+                // Hide cancel button during recording
                 if (this.cancelPortalBtn) {
                     this.cancelPortalBtn.style.display = 'none';
                 }
@@ -2694,6 +2573,7 @@ class AIPatientSimulator extends HTMLElement {
                     if (this.tempMsgDiv) {
                         this.tempMsgDiv.remove();
                     }
+                    // Restore cancel button at 0 turns if recording was cancelled/empty
                     if (this.cancelPortalBtn) {
                         this.cancelPortalBtn.style.display = 'inline-block';
                     }
@@ -2929,71 +2809,6 @@ class AIPatientSimulator extends HTMLElement {
         if (this.isSpeaking || this.ttsQueue.length === 0) return;
         this.isSpeaking = true;
         const text = this.ttsQueue.shift();
-
-        if (this.useBrowserTTS) {
-            this.runBrowserTTS(text);
-            return;
-        }
-
-        try {
-            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
-            
-            const params = new URLSearchParams({
-                text: text,
-                gender: this.currentPatientGender || "female",
-                pleasure: this.pad ? this.pad.p : 0.0,
-                arousal: this.pad ? this.pad.a : 0.0,
-                dominance: this.pad ? this.pad.d : 0.0
-            });
-            
-            const ttsUrl = `${fetchBase.replace(/\/$/, '')}/api/tts?${params.toString()}`;
-            
-            const audio = new Audio(ttsUrl);
-            this.activeAudio = audio;
-            
-            let speed = 1.0;
-            if (this.pad) {
-                const p = parseFloat(this.pad.p);
-                const a = parseFloat(this.pad.a);
-                if (p < -0.3) {
-                    speed = 0.85;
-                } else if (p < -0.5) {
-                    speed = 0.8;
-                } else if (a > 0.4 && p < 0) {
-                    speed = 1.15;
-                }
-            }
-            audio.playbackRate = speed;
-
-            audio.onended = () => {
-                this.activeAudio = null;
-                this.isSpeaking = false;
-                this.processTTSQueue();
-            };
-
-            audio.onerror = (e) => {
-                console.warn("Backend TTS playback failed, falling back to Browser TTS:", e);
-                this.useBrowserTTS = true;
-                this.activeAudio = null;
-                this.runBrowserTTS(text);
-            };
-
-            audio.play().catch(err => {
-                console.warn("Audio autoplay blocked or failed, falling back to Browser TTS:", err);
-                this.useBrowserTTS = true;
-                this.activeAudio = null;
-                this.runBrowserTTS(text);
-            });
-
-        } catch (err) {
-            console.warn("Backend TTS call failed, falling back to Browser TTS:", err);
-            this.useBrowserTTS = true;
-            this.activeAudio = null;
-            this.runBrowserTTS(text);
-        }
-    }
-
-    runBrowserTTS(text) {
         if (typeof SpeechSynthesisUtterance !== 'undefined' && window.speechSynthesis) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = "th-TH";
@@ -3027,13 +2842,6 @@ class AIPatientSimulator extends HTMLElement {
                 }
             } catch (e) {
                 console.error("Error setting speech voice:", e);
-            }
-
-            if (this.pad) {
-                const p = parseFloat(this.pad.p);
-                const a = parseFloat(this.pad.a);
-                if (p < -0.3) utterance.rate = 0.85;
-                else if (a > 0.4 && p < 0) utterance.rate = 1.15;
             }
 
             utterance.onend = () => { 

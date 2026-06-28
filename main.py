@@ -1,14 +1,12 @@
 import os
-import json
-import random
-import base64
-import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import ollama
+import json
 import chromadb
+import random
 from engine.intent_router import classify_intent
 from engine.session_manager import save_session, load_session, list_sessions
 from engine.evaluator import evaluate_session
@@ -18,9 +16,6 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-ELEVENLABS_FEMALE_VOICE_ID = os.getenv("ELEVENLABS_FEMALE_VOICE_ID", "EXAVITQu4vr4xnSDxMaL")
-ELEVENLABS_MALE_VOICE_ID = os.getenv("ELEVENLABS_MALE_VOICE_ID", "ErXwobaYiN019PkySvjV")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:latest")
 
@@ -29,12 +24,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/osce_platform.db")
-if DATABASE_URL.startswith("sqlite:///"):
-    db_path = DATABASE_URL.replace("sqlite:///", "")
-    db_dir = os.path.dirname(db_path)
-    if db_dir:
-        os.makedirs(db_dir, exist_ok=True)
+DATABASE_URL = "sqlite:///./data/osce_platform.db"
+os.makedirs("./data", exist_ok=True)
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -95,13 +86,12 @@ app.add_middleware(
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # Initialize Ollama client globally for better performance and reliability
-ollama_client = ollama.AsyncClient(host=OLLAMA_HOST, timeout=60.0)
+ollama_client = ollama.AsyncClient(host=OLLAMA_HOST)
 
 # --- 1. Database Connection ---
 print("กำลังเชื่อมต่อกับ medical_db (ChromaDB)...")
 try:
-    chroma_path = os.getenv("CHROMADB_PATH", "./data/medical_db")
-    db_client = chromadb.PersistentClient(path=chroma_path)
+    db_client = chromadb.PersistentClient(path="./data/medical_db")
     collection = db_client.get_collection("sor_ror_wor_cases")
     all_cases = collection.get()
     print(f"โหลดข้อมูลจาก ChromaDB สำเร็จ {len(all_cases['ids'])} เคส")
@@ -445,148 +435,6 @@ async def get_admin():
 async def get_widget_js():
     with open("patient-simulator-widget.js", "r", encoding="utf-8") as f:
         return Response(content=f.read(), media_type="application/javascript")
-
-@app.post("/api/stt")
-async def speech_to_text(file: UploadFile = File(...)):
-    try:
-        audio_content = await file.read()
-        filename = file.filename or "audio.webm"
-    except Exception as read_err:
-        raise HTTPException(status_code=400, detail=f"Failed to read upload audio: {read_err}")
-
-    # 1. Tier 1: OpenAI Whisper API
-    if OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here":
-        try:
-            headers = {"Authorization": f"Bearer {OPENAI_API_KEY}"}
-            files = {"file": (filename, audio_content, file.content_type)}
-            data = {"model": "whisper-1", "language": "th"}
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "https://api.openai.com/v1/audio/transcriptions",
-                    headers=headers,
-                    files=files,
-                    data=data,
-                    timeout=30.0
-                )
-                if response.status_code == 200:
-                    result = response.json()
-                    transcribed_text = result.get("text", "").strip()
-                    if transcribed_text:
-                        return {"text": transcribed_text}
-                else:
-                    print(f"OpenAI Whisper returned status {response.status_code}: {response.text}")
-        except Exception as e:
-            print(f"OpenAI Whisper error: {e}")
-
-    # 2. Tier 2: Google Gemini Multimodal API Fallback
-    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
-        try:
-            mime_type = file.content_type or "audio/webm"
-            if "audio/" not in mime_type:
-                mime_type = "audio/webm"
-            base64_audio = base64.b64encode(audio_content).decode("utf-8")
-            
-            payload = {
-                "contents": [{
-                    "parts": [
-                        {"inlineData": {"mimeType": mime_type, "data": base64_audio}},
-                        {"text": "กรุณาถอดความเสียงพูดภาษาไทยนี้เป็นข้อความอย่างถูกต้องและตรงไปตรงมาที่สุด โดยไม่ต้องอธิบายเพิ่มเติมหรือใส่ความคิดเห็นใดๆ ให้ตอบเฉพาะข้อความที่ได้ยินเท่านั้น"}
-                    ]
-                }]
-            }
-            
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, json=payload, timeout=30.0)
-                if response.status_code == 200:
-                    result = response.json()
-                    candidates = result.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            transcribed_text = parts[0].get("text", "").strip()
-                            if transcribed_text:
-                                return {"text": transcribed_text}
-                else:
-                    print(f"Gemini STT returned status {response.status_code}: {response.text}")
-        except Exception as e:
-            print(f"Gemini STT error: {e}")
-
-    # 3. Tier 3: Fallback
-    raise HTTPException(status_code=501, detail="No speech-to-text API provider available or requests failed.")
-
-@app.get("/api/tts")
-async def text_to_speech(
-    text: str,
-    gender: str = "female",
-    pleasure: float = 0.0,
-    arousal: float = 0.0,
-    dominance: float = 0.0
-):
-    if not text.strip():
-        raise HTTPException(status_code=400, detail="Text parameter is empty.")
-
-    # Tier 1: ElevenLabs
-    if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != "your_elevenlabs_api_key_here":
-        try:
-            voice_id = ELEVENLABS_FEMALE_VOICE_ID
-            gender_lower = gender.lower()
-            if "male" in gender_lower:
-                voice_id = ELEVENLABS_MALE_VOICE_ID
-
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
-            headers = {
-                "xi-api-key": ELEVENLABS_API_KEY,
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "text": text,
-                "model_id": "eleven_multilingual_v2",
-                "voice_settings": {
-                    "stability": 0.5,
-                    "similarity_boost": 0.75
-                }
-            }
-
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-                if response.status_code == 200:
-                    return Response(content=response.content, media_type="audio/mpeg")
-                else:
-                    print(f"ElevenLabs request failed: status {response.status_code}")
-        except Exception as e:
-            print(f"ElevenLabs TTS failed: {e}")
-
-    # Tier 2: OpenAI TTS
-    if OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here":
-        try:
-            voice = "nova"
-            gender_lower = gender.lower()
-            if "male" in gender_lower:
-                voice = "onyx"
-
-            url = "https://api.openai.com/v1/audio/speech"
-            headers = {
-                "Authorization": f"Bearer {OPENAI_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            payload = {
-                "model": "tts-1",
-                "input": text,
-                "voice": voice
-            }
-            async with httpx.AsyncClient() as client:
-                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
-                if response.status_code == 200:
-                    return Response(content=response.content, media_type="audio/mpeg")
-                else:
-                    print(f"OpenAI TTS failed: status {response.status_code}")
-        except Exception as e:
-            print(f"OpenAI TTS failed: {e}")
-
-    # Tier 3: Fallback
-    raise HTTPException(status_code=501, detail="No text-to-speech API provider available or requests failed.")
 
 @app.post("/api/auth")
 async def authenticate_user(auth_req: AuthRequest):
