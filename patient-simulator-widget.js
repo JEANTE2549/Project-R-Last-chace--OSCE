@@ -34,6 +34,8 @@ class AIPatientSimulator extends HTMLElement {
         this.isSpeaking = false;
         this.sentenceBuffer = "";
         this.currentPatientGender = "female";
+        this.backendSTTFailed = false;
+        this.backendTTSFailed = false;
     }
 
     connectedCallback() {
@@ -917,7 +919,7 @@ class AIPatientSimulator extends HTMLElement {
                     font-size: 13px;
                     color: #475569;
                     margin-bottom: 12px;
-                    display: flex;
+                    display: none !important;
                     align-items: center;
                     gap: 8px;
                     font-weight: 500;
@@ -941,6 +943,15 @@ class AIPatientSimulator extends HTMLElement {
                     <span style="font-size: 11px; color: #64748b; display: block; margin-top: 8px; line-height: 1.4;">
                         *หมายเหตุ: คลาวด์ Typhoon มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
                     </span>
+                </div>
+
+                <!-- Force Offline Toggle Card -->
+                <div class="portal-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                    <div>
+                        <span style="font-weight: bold; color: #1e3a8a; font-size: 13.5px; display: block;">⚙️ โหมดฝึกฝนออฟไลน์ (Force Offline Local Mode)</span>
+                        <span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 3px;">ข้ามคลาวด์และใช้ระบบแปลเสียง/สังเคราะห์เสียงของเบราว์เซอร์รวมถึงโมเดลในเครื่อง 100% (เพื่อประหยัดโควต้า API)</span>
+                    </div>
+                    <input type="checkbox" id="force-offline-toggle" style="width: 22px; height: 22px; cursor: pointer; accent-color: #ea580c; flex-shrink: 0;">
                 </div>
 
                 <!-- Patient Persona Bank Card directly in student Portal screen -->
@@ -1195,6 +1206,13 @@ class AIPatientSimulator extends HTMLElement {
                 <h2>AI Patient Simulator (OSCE Practice Room)</h2>
                 <div id="quota-tracker-bar">☁️ กำลังตรวจสอบโควต้าประมวลผล...</div>
                 <div id="chat-box"></div>
+                
+                <!-- Model Display Info below Chat Box -->
+                <div id="model-display-info" style="font-size: 12px; color: #475569; margin-top: 6px; margin-bottom: 12px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                    <span>🤖 โมเดลตอบสนองคนไข้:</span>
+                    <span id="active-model-name" style="color: #2563eb; font-weight: 700;">(รอเริ่มต้นบทสนทนา...)</span>
+                </div>
+                
                 <div class="btn-container">
                     <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">ยกเลิกการตรวจและกลับหน้าหลัก</button>
                     <button id="mic-btn">เริ่มบันทึกเสียงพูด</button>
@@ -1244,6 +1262,7 @@ class AIPatientSimulator extends HTMLElement {
     setupElements() {
         this.chatBox = this.shadowDOM.getElementById('chat-box');
         this.quotaTrackerBar = this.shadowDOM.getElementById('quota-tracker-bar');
+        this.activeModelName = this.shadowDOM.getElementById('active-model-name');
         this.status = this.shadowDOM.getElementById('status');
         this.micBtn = this.shadowDOM.getElementById('mic-btn');
         this.endBtn = this.shadowDOM.getElementById('end-btn');
@@ -1260,6 +1279,7 @@ class AIPatientSimulator extends HTMLElement {
         // Models dropdowns
         this.tierSelect = this.shadowDOM.getElementById('tier-select');
         this.portalTierSelect = this.shadowDOM.getElementById('portal-tier-select');
+        this.forceOfflineToggle = this.shadowDOM.getElementById('force-offline-toggle');
         
         // Settings elements
         this.settingsBtn = this.shadowDOM.getElementById('settings-btn');
@@ -1573,9 +1593,20 @@ class AIPatientSimulator extends HTMLElement {
     launchSimulationRoom(caseId) {
         this.selectedCaseId = caseId;
         
+        if (this.forceOfflineToggle && this.forceOfflineToggle.checked) {
+            this.apiTier = 'free';
+            this.backendSTTFailed = true;
+            this.backendTTSFailed = true;
+        } else {
+            this.apiTier = 'paid';
+            this.backendSTTFailed = false;
+            this.backendTTSFailed = false;
+        }
+        
         // Fully reset session states
         this.sessionId = "session_" + Math.random().toString(36).substring(7);
         this.chatBox.innerHTML = "";
+        if (this.activeModelName) this.activeModelName.innerText = "(รอเริ่มต้นบทสนทนา...)";
         
         // Reset voice speech parameters
         this.currentPatientMsgDiv = null;
@@ -2455,6 +2486,12 @@ class AIPatientSimulator extends HTMLElement {
                             }
                             return;
                         }
+                        if (payload.type === 'model_info') {
+                            if (this.activeModelName) {
+                                this.activeModelName.innerText = payload.model;
+                            }
+                            return;
+                        }
                     } catch (e) {
                         console.error("Error parsing JSON message:", e);
                     }
@@ -2518,12 +2555,117 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
-    toggleDictation() {
+    async toggleDictation() {
         if (this.isRecording) {
-            if (this.recognition) this.recognition.stop();
+            if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+                this.mediaRecorder.stop();
+            } else if (this.recognition) {
+                this.recognition.stop();
+            }
             return;
         }
 
+        // Check if we should use browser-native recognition directly
+        if (this.backendSTTFailed || !navigator.mediaDevices || !window.MediaRecorder) {
+            this.runLocalSpeechRecognition();
+            return;
+        }
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            this.audioChunks = [];
+            this.mediaRecorder = new MediaRecorder(stream);
+            
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    this.audioChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstart = () => {
+                this.isRecording = true;
+                this.status.innerText = "กำลังบันทึกเสียงพูดของคุณ (คลิกอีกครั้งเพื่อส่ง)...";
+                this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
+                this.micBtn.style.backgroundColor = "#dc3545";
+                
+                if (this.cancelPortalBtn) {
+                    this.cancelPortalBtn.style.display = 'none';
+                }
+                
+                this.tempMsgDiv = document.createElement('div');
+                this.tempMsgDiv.className = 'msg user';
+                this.tempMsgDiv.innerText = "แพทย์: กำลังบันทึกเสียง...";
+                this.chatBox.appendChild(this.tempMsgDiv);
+                this.chatBox.scrollTop = this.chatBox.scrollHeight;
+                this.currentPatientMsgDiv = null;
+            };
+
+            this.mediaRecorder.onstop = async () => {
+                this.isRecording = false;
+                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
+                this.micBtn.style.backgroundColor = "#0d6efd";
+                
+                // Stop all tracks to release microphone
+                stream.getTracks().forEach(track => track.stop());
+
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                
+                if (audioBlob.size < 1000) { // Too short/empty
+                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
+                    if (this.cancelPortalBtn) this.cancelPortalBtn.style.display = 'inline-block';
+                    return;
+                }
+
+                this.status.innerText = "กำลังแปลงเสียงเป็นข้อความ...";
+                if (this.tempMsgDiv) this.tempMsgDiv.innerText = "แพทย์: กำลังประมวลผลเสียง...";
+
+                try {
+                    const formData = new FormData();
+                    formData.append("file", audioBlob, "voice_query.webm");
+
+                    const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+                    const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/stt`, {
+                        method: "POST",
+                        body: formData,
+                        headers: {
+                            'ngrok-skip-browser-warning': '1'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        const text = data.text ? data.text.trim() : "";
+                        if (text) {
+                            if (this.tempMsgDiv) {
+                                this.tempMsgDiv.innerText = "แพทย์: " + text;
+                            }
+                            this.sendViaWS(text);
+                        } else {
+                            throw new Error("Empty transcription returned");
+                        }
+                    } else {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                } catch (err) {
+                    console.warn("Backend STT failed, falling back to client-side browser STT:", err);
+                    this.backendSTTFailed = true;
+                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
+                    
+                    this.status.innerText = "ระบบสลับไปใช้ระบบแปลเสียงในตัวเบราว์เซอร์...";
+                    this.runLocalSpeechRecognition();
+                }
+            };
+
+            this.mediaRecorder.start();
+
+        } catch (e) {
+            console.warn("Failed to start MediaRecorder, falling back to local speech recognition:", e);
+            this.backendSTTFailed = true;
+            this.runLocalSpeechRecognition();
+        }
+    }
+
+    runLocalSpeechRecognition() {
         if (window.hasOwnProperty('webkitSpeechRecognition')) {
             this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
@@ -2538,7 +2680,6 @@ class AIPatientSimulator extends HTMLElement {
                 this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
                 this.micBtn.style.backgroundColor = "#dc3545";
                 
-                // Hide cancel button during recording
                 if (this.cancelPortalBtn) {
                     this.cancelPortalBtn.style.display = 'none';
                 }
@@ -2573,7 +2714,6 @@ class AIPatientSimulator extends HTMLElement {
                     if (this.tempMsgDiv) {
                         this.tempMsgDiv.remove();
                     }
-                    // Restore cancel button at 0 turns if recording was cancelled/empty
                     if (this.cancelPortalBtn) {
                         this.cancelPortalBtn.style.display = 'inline-block';
                     }
@@ -2663,6 +2803,7 @@ class AIPatientSimulator extends HTMLElement {
         this.closeDrawer(); // Ensure settings drawer is closed
         this.sessionId = "session_" + Math.random().toString(36).substring(7);
         this.chatBox.innerHTML = "";
+        if (this.activeModelName) this.activeModelName.innerText = "(รอเริ่มต้นบทสนทนา...)";
         this.currentPatientMsgDiv = null;
         this.ttsQueue = [];
         this.isSpeaking = false;
@@ -2805,14 +2946,98 @@ class AIPatientSimulator extends HTMLElement {
         this.processTTSQueue();
     }
 
-    processTTSQueue() {
+    async processTTSQueue() {
         if (this.isSpeaking || this.ttsQueue.length === 0) return;
         this.isSpeaking = true;
         const text = this.ttsQueue.shift();
+
+        // 1. Quota Saver: Bypass backend for very short sentences (saves ElevenLabs characters)
+        const isVeryShort = text.length < 15;
+        
+        if (!isVeryShort && !this.backendTTSFailed) {
+            try {
+                const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+                const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/tts`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        'ngrok-skip-browser-warning': '1'
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        gender: this.currentPatientGender || "female",
+                        pleasure: this.pad ? parseFloat(this.pad.p || 0.0) : 0.0,
+                        arousal: this.pad ? parseFloat(this.pad.a || 0.0) : 0.0,
+                        dominance: this.pad ? parseFloat(this.pad.d || 0.0) : 0.0
+                    })
+                });
+
+                if (response.ok) {
+                    const audioBlob = await response.blob();
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    // Modulate speed based on PAD coordinates
+                    let rate = 1.0;
+                    if (this.pad) {
+                        const p = parseFloat(this.pad.p || 0.0);
+                        const a = parseFloat(this.pad.a || 0.0);
+                        if (p < -0.3) {
+                            rate = 0.85; // Slow down under severe pain
+                        } else if (a > 0.4 && p < 0.0) {
+                            rate = 1.15; // Speed up under high arousal anxiety/panic
+                        }
+                    }
+                    audio.playbackRate = rate;
+
+                    audio.onended = () => {
+                        this.isSpeaking = false;
+                        URL.revokeObjectURL(audioUrl);
+                        this.processTTSQueue();
+                    };
+                    audio.onerror = (e) => {
+                        console.error("Audio playback error, falling back:", e);
+                        this.isSpeaking = false;
+                        this.backendTTSFailed = true;
+                        // Retry this sentence using browser TTS
+                        this.ttsQueue.unshift(text);
+                        this.processTTSQueue();
+                    };
+                    
+                    audio.play();
+                    return;
+                } else {
+                    if (response.status === 501) {
+                        console.info("Backend TTS not configured, using browser voice.");
+                    } else {
+                        console.warn(`Backend TTS returned status ${response.status}`);
+                    }
+                    this.backendTTSFailed = true;
+                }
+            } catch (err) {
+                console.warn("Backend TTS connection failed, falling back:", err);
+                this.backendTTSFailed = true;
+            }
+        }
+
+        // 2. Fallback / Quota-saved: Use native Web Speech API speechSynthesis
         if (typeof SpeechSynthesisUtterance !== 'undefined' && window.speechSynthesis) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = "th-TH";
             
+            // Adjust rate for native voice based on PAD
+            let rate = 1.0;
+            if (this.pad) {
+                const p = parseFloat(this.pad.p || 0.0);
+                const a = parseFloat(this.pad.a || 0.0);
+                if (p < -0.3) {
+                    rate = 0.85;
+                } else if (a > 0.4 && p < 0.0) {
+                    rate = 1.15;
+                }
+            }
+            utterance.rate = rate;
+
             try {
                 const voices = window.speechSynthesis.getVoices();
                 const thVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.replace('_', '-').startsWith('th-'));

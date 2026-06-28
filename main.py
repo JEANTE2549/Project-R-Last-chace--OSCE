@@ -1,12 +1,13 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, File, UploadFile
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 import ollama
 import json
 import chromadb
 import random
+import httpx
 from engine.intent_router import classify_intent
 from engine.session_manager import save_session, load_session, list_sessions
 from engine.evaluator import evaluate_session
@@ -14,8 +15,13 @@ from engine.evaluator import evaluate_session
 # Load secure environment configurations
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+WHISPER_API_KEY = os.getenv("WHISPER_API_KEY")
 TYPHOON_API_KEY = os.getenv("TYPHOON_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+ELEVENLABS_FEMALE_VOICE_ID = os.getenv("ELEVENLABS_FEMALE_VOICE_ID", "EXAVITQu4vr4xnSDxMaL")
+ELEVENLABS_MALE_VOICE_ID = os.getenv("ELEVENLABS_MALE_VOICE_ID", "ErXwobaYiN019PkySvjV")
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:latest")
 
@@ -576,6 +582,128 @@ async def list_cases():
         })
     return cases_list
 
+class TTSRequest(BaseModel):
+    text: str
+    gender: str
+    pleasure: float = 0.0
+    arousal: float = 0.0
+    dominance: float = 0.0
+
+@app.post("/api/stt")
+async def speech_to_text(file: UploadFile = File(...)):
+    audio_bytes = await file.read()
+    
+    # Tier 1: Hugging Face Whisper (completely free using HF token)
+    if HF_API_TOKEN and HF_API_TOKEN != "hf_your_huggingface_token_here":
+        try:
+            url = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo"
+            headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, content=audio_bytes, timeout=30.0)
+                if response.status_code == 200:
+                    res_data = response.json()
+                    text = res_data.get("text", "").strip()
+                    if text:
+                        print(f"HF Whisper STT transcribed: {text}")
+                        return {"text": text}
+                else:
+                    print(f"HF Whisper STT error (status {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"HF Whisper STT failed: {e}")
+
+    # Tier 2: OpenAI Whisper (using WHISPER_API_KEY)
+    whisper_key = WHISPER_API_KEY if (WHISPER_API_KEY and WHISPER_API_KEY != "your_whisper_api_key_here") else OPENAI_API_KEY
+    if whisper_key and whisper_key != "your_openai_api_key_here":
+        try:
+            url = "https://api.openai.com/v1/audio/transcriptions"
+            headers = {"Authorization": f"Bearer {whisper_key}"}
+            
+            filename = file.filename or "audio.webm"
+            content_type = file.content_type or "audio/webm"
+            
+            files = {
+                "file": (filename, audio_bytes, content_type)
+            }
+            data = {
+                "model": "whisper-1",
+                "language": "th"
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, files=files, data=data, timeout=30.0)
+                if response.status_code == 200:
+                    res_data = response.json()
+                    text = res_data.get("text", "").strip()
+                    if text:
+                        print(f"OpenAI Whisper STT transcribed: {text}")
+                        return {"text": text}
+                else:
+                    print(f"OpenAI Whisper STT error (status {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"OpenAI Whisper STT failed: {e}")
+
+    return Response(status_code=501, content="No configured or working STT API keys found. Falling back to browser Web Speech API.")
+
+@app.post("/api/tts")
+async def text_to_speech(req: TTSRequest):
+    text = req.text
+    gender = req.gender.lower()
+    
+    # Tier 1: ElevenLabs (using ELEVENLABS_API_KEY)
+    if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != "your_elevenlabs_api_key_here":
+        try:
+            voice_id = ELEVENLABS_FEMALE_VOICE_ID if "female" in gender else ELEVENLABS_MALE_VOICE_ID
+            url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+            
+            headers = {
+                "xi-api-key": ELEVENLABS_API_KEY,
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "text": text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {
+                    "stability": 0.5,
+                    "similarity_boost": 0.75
+                }
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                if response.status_code == 200:
+                    return StreamingResponse(response.iter_bytes(), media_type="audio/mpeg")
+                else:
+                    print(f"ElevenLabs TTS error (status {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"ElevenLabs TTS failed: {e}")
+
+    # Tier 2: OpenAI TTS (using OPENAI_API_KEY)
+    if OPENAI_API_KEY and OPENAI_API_KEY != "your_openai_api_key_here":
+        try:
+            voice = "nova" if "female" in gender else "onyx"
+            url = "https://api.openai.com/v1/audio/speech"
+            
+            headers = {
+                "Authorization": f"Bearer {OPENAI_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "tts-1",
+                "input": text,
+                "voice": voice
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(url, headers=headers, json=payload, timeout=30.0)
+                if response.status_code == 200:
+                    return StreamingResponse(response.iter_bytes(), media_type="audio/mpeg")
+                else:
+                    print(f"OpenAI TTS error (status {response.status_code}): {response.text}")
+        except Exception as e:
+            print(f"OpenAI TTS failed: {e}")
+
+    return Response(status_code=501, content="No configured or working TTS API keys found. Falling back to browser Web Speech API.")
+
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -754,6 +882,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             model = "typhoon-v2.5-30b-a3b-instruct" if provider == "typhoon" else "gpt-4o-mini"
                             
                             import httpx
+                            await websocket.send_text(json.dumps({"type": "model_info", "model": model}))
                             async with httpx.AsyncClient() as client:
                                 async with client.stream("POST", url, headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, json={"model": model, "messages": messages_to_send, "temperature": temperature, "stream": True}, timeout=30.0) as response:
                                     async for line in response.aiter_lines():
@@ -772,6 +901,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 current_tier += 1
                                 continue
                             import httpx
+                            await websocket.send_text(json.dumps({"type": "model_info", "model": "gemini-1.5-flash"}))
                             async with httpx.AsyncClient() as client:
                                 async with client.stream("POST", "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", headers={"Authorization": f"Bearer {GEMINI_API_KEY}", "Content-Type": "application/json"}, json={"model": "gemini-1.5-flash", "messages": messages_to_send, "temperature": temperature, "stream": True}, timeout=30.0) as response:
                                     async for line in response.aiter_lines():
@@ -788,6 +918,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     else:
                         # Ollama Tiers
                         m = selected_model if current_tier == 3 else os.getenv("OLLAMA_LIGHT_MODEL", "qwen2.5:1.5b")
+                        await websocket.send_text(json.dumps({"type": "model_info", "model": m}))
                         response = await ollama_client.chat(model=m, messages=messages_to_send, stream=True, options={'temperature': temperature})
                         async for chunk in response:
                             text = chunk['message']['content']
