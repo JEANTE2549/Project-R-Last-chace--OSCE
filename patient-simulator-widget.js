@@ -36,6 +36,137 @@ class AIPatientSimulator extends HTMLElement {
         this.currentPatientGender = "female";
         this.backendSTTFailed = false;
         this.backendTTSFailed = false;
+        this.currentLanguage = "th";
+        this.translations = {
+            th: {
+                "portal-title": "ระบบจำลองสถานการณ์คนไข้ซักประวัติ (OSCE)",
+                "force-offline-title": "⚙️ โหมดฝึกฝนออฟไลน์",
+                "force-offline-desc": "หลีกเลี่ยงคลาวด์เพื่อทดสอบโดยใช้ระบบแปลเสียง สังเคราะห์เสียง และโมเดลในเครื่องทั้งหมด เพื่อประหยัดโควต้า",
+                "persona-bank-title": "คลังข้อมูลบุคลิกและระดับอารมณ์คนไข้",
+                "customize-persona-btn": "ปรับแต่งอารมณ์...",
+                "delete-persona-btn": "ลบบุคลิก",
+                "blind-osce-btn": "จำลองการสอบแบบสุ่มเคส",
+                "select-syndrome-btn": "เลือกเคสโรคสำหรับฝึกฝน",
+                "view-history-btn": "รายงานและประวัติการฝึกฝนย้อนหลัง",
+                "select-case-title": "เลือกเคสคนไข้จำลอง",
+                "back-btn": "ย้อนกลับ",
+                "cases-loading": "กำลังประมวลผลดึงกลุ่มโรคเวกเตอร์...",
+                "history-title": "ประวัติการสอบและการฝึกฝนของคุณ",
+                "history-loading": "กำลังประมวลผลดึงประวัติการซักของคุณจากระบบ...",
+                "pre-exam-title": "เตรียมความพร้อมก่อนเข้าตรวจ",
+                "pre-exam-select-label": "เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:",
+                "pre-exam-summary-label": "รายละเอียดบุคลิกภาพของคนไข้จำลอง:",
+                "pre-exam-pain-label": "ระดับความเจ็บปวด:",
+                "pre-exam-anxiety-label": "ระดับความตื่นตระหนก:",
+                "pre-exam-anger-label": "ระดับความโกรธหรือขัดขืน:",
+                "start-exam-btn": "เริ่มการสอบซักประวัติ",
+                "cancel-exam-btn": "ย้อนกลับ",
+                "widget-title": "ห้องสอบซักประวัติด้วย AI (OSCE)",
+                "model-display-label": "🤖 โมเดลตอบสนองคนไข้:",
+                "model-display-waiting": "(รอเริ่มต้นบทสนทนา...)",
+                "cancel-portal-btn": "ยกเลิกการตรวจและกลับหน้าหลัก",
+                "chat-send-btn": "ส่ง",
+                "chat-input-placeholder": "พิมพ์คำถามซักประวัติที่นี่ หรือกดไมค์เพื่อพูด...",
+                "end-btn": "เสร็จสิ้นการซักประวัติ",
+                "new-btn": "เข้าตรวจคนไข้เคสใหม่",
+                "view-eval-btn": "แสดงผลการประเมินความสามารถ",
+                "portal-btn": "กลับสู่หน้าหลัก",
+                "status-connecting": "กำลังเชื่อมต่อ...",
+                "status-waiting": "รอรับคำถามต่อไป...",
+                "status-recording": "กำลังบันทึกเสียงพูด...",
+                "status-processing": "กำลังประมวลผล...",
+                "status-transcribing": "กำลังถอดเสียงจากคลาวด์...",
+                "eval-title": "ผลการประเมินการซักประวัติ",
+                "eval-overall-score": "คะแนนรวม:",
+                "eval-strengths": "จุดเด่น:",
+                "eval-weaknesses": "จุดที่ควรพัฒนา:",
+                "eval-suggestion": "คำแนะนำเพิ่มเติม:",
+                "eval-loading": "กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)",
+                
+                // Settings Drawer Translations
+                "settings-drawer-title": "แผงตั้งค่าและจำลองการแสดงออกของคนไข้",
+                "settings-difficulty-label": "ระดับความยากในการซักประวัติ",
+                "settings-diff-easy": "ง่าย",
+                "settings-diff-medium": "ปานกลาง",
+                "settings-diff-hard": "ยาก",
+                "settings-diff-desc": "• <b>ง่าย:</b> คนไข้ตอบตรงประเด็น ไม่นอกเรื่อง<br>• <b>ปานกลาง:</b> ตอบตามประวัติปกติ มีลีลาตามอารมณ์พอดี<br>• <b>ยาก:</b> คนไข้โยกโย้ บ่นกังวลสูง หรือเจ็บปวดมาก ต้องซักประวัติอย่างใส่ใจและใช้ความเข้าใจเห็นอกเห็นใจ",
+                "settings-preset-label": "เลือกแม่แบบบุคลิกภาพ",
+                "settings-emotion-title": "ระดับการตอบสนองด้านอารมณ์พื้นฐาน",
+                "settings-emotion-anger": "ความโกรธ/ก้าวร้าว:",
+                "settings-emotion-sadness": "ความเศร้า/อ่อนแอ:",
+                "settings-emotion-happiness": "ความสุข/สงบนิ่ง:",
+                "settings-pad-vectors": "ค่าเวกเตอร์อารมณ์ PAD:",
+                "settings-extra-instructions": "ข้อกำหนดพฤติกรรมและการแสดงออกเพิ่มเติม",
+                "settings-extra-placeholder": "ระบุพฤติกรรมเสริม เช่น 'คนไข้ปากเบี้ยวเล็กน้อยเวลากล่าว', 'อ่อนแรงครึ่งซีก', หรือ 'มีความอ่อนไหวง่าย ร้องไห้ง่ายมาก' เพื่อท้าทายทักษะการซักประวัติ",
+                "settings-extra-note": "*หมายเหตุ: คำสั่งนี้จะส่งไปช่วยเสริมพฤติกรรมการแสดงออกของคนไข้สมมติ โดยไม่รบกวนบทยืนยันอาการหลักของเคสแพทย์จำลอง*",
+                "settings-save-bank": "บันทึกการปรับจูนลงในคลังเก็บข้อมูลส่วนตัว",
+                "settings-save-btn": "บันทึกการปรับจูน"
+            },
+            en: {
+                "portal-title": "Simulated Patient OSCE Practice Room",
+                "force-offline-title": "⚙️ Force Offline Local Mode",
+                "force-offline-desc": "Bypass cloud APIs and force local model, STT, and TTS (Saves API Quota)",
+                "persona-bank-title": "Patient Persona & Mood Bank",
+                "customize-persona-btn": "Customize Mood...",
+                "delete-persona-btn": "Delete Persona",
+                "blind-osce-btn": "Blind OSCE Encounter (Random Case)",
+                "select-syndrome-btn": "Practice by Case Categories (Selective)",
+                "view-history-btn": "My Activity & Evaluation History",
+                "select-case-title": "Select Simulated Case",
+                "back-btn": "Back",
+                "cases-loading": "Fetching case categories...",
+                "history-title": "Your Practice & Exam History",
+                "history-loading": "Fetching your practice history...",
+                "pre-exam-title": "Encounter Preparation",
+                "pre-exam-select-label": "Select Patient Persona for this Encounter:",
+                "pre-exam-summary-label": "Patient Persona Summary:",
+                "pre-exam-pain-label": "Physical Pain Level:",
+                "pre-exam-anxiety-label": "Anxiety/Panic Level:",
+                "pre-exam-anger-label": "Hostility/Anger Level:",
+                "start-exam-btn": "Start Encounter",
+                "cancel-exam-btn": "Back",
+                "widget-title": "AI Patient Simulator (OSCE Encounter)",
+                "model-display-label": "🤖 Active AI Model:",
+                "model-display-waiting": "(Waiting to begin encounter...)",
+                "cancel-portal-btn": "Cancel & Exit to Main Menu",
+                "chat-send-btn": "Send",
+                "chat-input-placeholder": "Type your question here or use the microphone...",
+                "end-btn": "End Encounter",
+                "new-btn": "Start New Encounter",
+                "view-eval-btn": "Show Evaluation & Feedback",
+                "portal-btn": "Exit to Portal",
+                "status-connecting": "Connecting...",
+                "status-waiting": "Waiting for your next question...",
+                "status-recording": "Recording voice...",
+                "status-processing": "Processing...",
+                "status-transcribing": "Transcribing audio in cloud...",
+                "eval-title": "OSCE Encounter Evaluation",
+                "eval-overall-score": "Overall Score:",
+                "eval-strengths": "Strengths:",
+                "eval-weaknesses": "Areas for Improvement:",
+                "eval-suggestion": "Additional Suggestions:",
+                "eval-loading": "Processing AI Evaluation... (Takes 10-30 seconds)",
+                
+                // Settings Drawer Translations
+                "settings-drawer-title": "Patient Expression & Settings Panel",
+                "settings-difficulty-label": "Encounter Difficulty Level",
+                "settings-diff-easy": "Easy",
+                "settings-diff-medium": "Medium",
+                "settings-diff-hard": "Hard",
+                "settings-diff-desc": "• <b>Easy:</b> Patient answers directly to the point.<br>• <b>Medium:</b> Responds normally with realistic emotional cues.<br>• <b>Hard:</b> Responds evasively, highly anxious, or in severe pain; requires empathy.",
+                "settings-preset-label": "Select Standard Preset",
+                "settings-emotion-title": "Basic Emotional Response Levels",
+                "settings-emotion-anger": "Hostility/Anger:",
+                "settings-emotion-sadness": "Sadness/Weakness:",
+                "settings-emotion-happiness": "Happiness/Calmness:",
+                "settings-pad-vectors": "PAD Emotion Vectors:",
+                "settings-extra-instructions": "Additional Behavior Instructions",
+                "settings-extra-placeholder": "Specify extra behaviors, e.g., 'patient slurs slightly when speaking', 'half-body weakness', or 'cries easily'.",
+                "settings-extra-note": "*Note: These instructions will enhance the patient's emotional behavior without overriding the main clinical case info.*",
+                "settings-save-bank": "Save Configuration to Personal Bank",
+                "settings-save-btn": "Save Settings"
+            }
+        };
     }
 
     connectedCallback() {
@@ -49,6 +180,7 @@ class AIPatientSimulator extends HTMLElement {
         }
         this.loadPersonaBank();
         this.loadPreExamPersonaBank();
+        this.updateLangUIState();
     }
 
     checkAuthentication() {
@@ -928,36 +1060,42 @@ class AIPatientSimulator extends HTMLElement {
             </style>
             
             <!-- Pre-Encounter Entry Portal -->
-            <div id="portal-screen" style="display: none;">
-                <div class="portal-title">ระบบจำลองสถานการณ์คนไข้ซักประวัติ (OSCE Practice Platform)</div>
+            <div id="portal-screen" style="display: none; position: relative;">
+                <div style="position: relative; margin-bottom: 25px; min-height: 40px; padding-right: 150px; box-sizing: border-box; text-align: left; display: block;">
+                    <div class="portal-title" data-i18n="portal-title" style="margin: 0; line-height: 1.2;">ระบบจำลองสถานการณ์คนไข้ซักประวัติ (OSCE)</div>
+                    <div style="position: absolute; top: 0; right: 0; display: flex; gap: 4px; z-index: 10;">
+                        <button class="lang-btn" data-lang="th" style="padding: 5px 10px; font-size: 11.5px; font-weight: bold; border-radius: 6px; cursor: pointer; border: 1.5px solid #cbd5e1; transition: 0.2s; background-color: #ea580c; color: white;">ภาษาไทย</button>
+                        <button class="lang-btn" data-lang="en" style="padding: 5px 10px; font-size: 11.5px; font-weight: bold; border-radius: 6px; cursor: pointer; border: 1.5px solid #cbd5e1; transition: 0.2s; background-color: #ffffff; color: #475569;">English</button>
+                    </div>
+                </div>
                 
                 <!-- Premium Model Inference Selector inside Portal -->
                 <div class="portal-card" style="display: none; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.04); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
                     <label for="portal-tier-select" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                        ระบบประมวลผลปัญญาประดิษฐ์ (AI Inference Selector)
+                        ระบบประมวลผลปัญญาประดิษฐ์
                     </label>
                     <select id="portal-tier-select" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; font-family: inherit; background-color: #f8fafc; cursor: pointer; color: #1e293b; font-weight: 600; margin-bottom: 10px;">
-                        <option value="free">ระบบประมวลผลในเครื่อง (Local Ollama) - ออฟไลน์ / ส่วนตัว</option>
-                        <option value="paid">ระบบประมวลผลคลาวด์ภาษาไทย (Typhoon AI) - ความแม่นยำสูง</option>
+                        <option value="free">ระบบประมวลผลในเครื่อง - ออฟไลน์ / ส่วนตัว</option>
+                        <option value="paid">ระบบประมวลผลคลาวด์ภาษาไทย - ความแม่นยำสูง</option>
                     </select>
                     <span style="font-size: 11px; color: #64748b; display: block; margin-top: 8px; line-height: 1.4;">
-                        *หมายเหตุ: คลาวด์ Typhoon มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
+                        *หมายเหตุ: คลาวด์ มีการจำกัดโควต้าคำถามสูงสุด 30 ข้อต่อรอบ และ 50 ข้อต่อวันต่อคน
                     </span>
                 </div>
 
                 <!-- Force Offline Toggle Card -->
                 <div class="portal-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <div>
-                        <span style="font-weight: bold; color: #1e3a8a; font-size: 13.5px; display: block;">⚙️ โหมดฝึกฝนออฟไลน์ (Force Offline Local Mode)</span>
-                        <span style="font-size: 11.5px; color: #64748b; display: block; margin-top: 3px;">ข้ามคลาวด์และใช้ระบบแปลเสียง/สังเคราะห์เสียงของเบราว์เซอร์รวมถึงโมเดลในเครื่อง 100% (เพื่อประหยัดโควต้า API)</span>
+                        <span data-i18n="force-offline-title" style="font-weight: bold; color: #1e3a8a; font-size: 13.5px; display: block;">⚙️ โหมดฝึกฝนออฟไลน์</span>
+                        <span data-i18n="force-offline-desc" style="font-size: 11.5px; color: #64748b; display: block; margin-top: 3px;">หลีกเลี่ยงคลาวด์เพื่อทดสอบโดยใช้ระบบแปลเสียง สังเคราะห์เสียง และโมเดลในเครื่องทั้งหมด เพื่อประหยัดโควต้า</span>
                     </div>
                     <input type="checkbox" id="force-offline-toggle" style="width: 22px; height: 22px; cursor: pointer; accent-color: #ea580c; flex-shrink: 0;">
                 </div>
 
                 <!-- Patient Persona Bank Card directly in student Portal screen -->
                 <div class="portal-card" id="persona-bank-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
-                    <label style="font-weight: 800; color: #1e3a8a; font-size: 14px; display: block; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                        คลังข้อมูลบุคลิกและระดับอารมณ์คนไข้ (Patient Persona Bank)
+                    <label data-i18n="persona-bank-title" style="font-weight: 800; color: #1e3a8a; font-size: 14px; display: block; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                        คลังข้อมูลบุคลิกและระดับอารมณ์คนไข้
                     </label>
                     <select id="persona-preset-select" style="display: none;">
                         <!-- Options populated dynamically by JS -->
@@ -972,23 +1110,23 @@ class AIPatientSimulator extends HTMLElement {
                     </div>
 
                     <div style="display: flex; gap: 10px;">
-                        <button id="customize-persona-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                        <button id="customize-persona-btn" data-i18n="customize-persona-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
                             ปรับแต่งอารมณ์...
                         </button>
-                        <button id="delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                        <button id="delete-persona-btn" data-i18n="delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
                             ลบบุคลิก
                         </button>
                     </div>
                 </div>
 
                 <div class="portal-btns-container">
-                    <button id="blind-osce-btn" class="portal-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
+                    <button id="blind-osce-btn" data-i18n="blind-osce-btn" class="portal-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);">
                         จำลองการสอบแบบสุ่มเคส (Blind Case Encounter)
                     </button>
-                    <button id="select-syndrome-btn" class="portal-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
+                    <button id="select-syndrome-btn" data-i18n="select-syndrome-btn" class="portal-btn" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                         เลือกเคสโรคสำหรับฝึกฝน (Selective Categories)
                     </button>
-                    <button id="view-history-btn" class="portal-btn" style="background: #ffffff; color: #2563eb; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <button id="view-history-btn" data-i18n="view-history-btn" class="portal-btn" style="background: #ffffff; color: #2563eb; border: 1.5px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         รายงานและประวัติการฝึกฝนย้อนหลัง (My Activity History)
                     </button>
                 </div>
@@ -997,10 +1135,10 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Student History Screen -->
             <div id="history-screen" style="display: none; padding: 10px;">
                 <div class="cases-header">
-                    <h3 style="margin: 0; color: #333;">ประวัติการสอบและการฝึกฝนของคุณ</h3>
-                    <button id="history-back-btn" class="back-btn">ย้อนกลับ</button>
+                    <h3 data-i18n="history-title" style="margin: 0; color: #333;">ประวัติการสอบและการฝึกฝนของคุณ</h3>
+                    <button id="history-back-btn" data-i18n="back-btn" class="back-btn">ย้อนกลับ</button>
                 </div>
-                <div id="history-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
+                <div id="history-loading" data-i18n="history-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
                     กำลังประมวลผลดึงประวัติการซักของคุณจากระบบ...
                 </div>
                 <div id="history-list-container" class="cards-grid" style="grid-template-columns: 1fr; max-height: 400px; overflow-y: auto;">
@@ -1011,10 +1149,10 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Pre-Exam Configuration Gate Modal -->
             <div id="pre-exam-modal" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px); z-index: 29000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-radius: 15px; text-align: center;">
                 <div class="auth-card" style="border: 1px solid #e2e8f0; background: #ffffff; max-width: 420px; text-align: left; color: #1e293b; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);">
-                    <div class="auth-title" style="background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
+                    <div class="auth-title" data-i18n="pre-exam-title" style="background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 20px; font-weight: 800; margin-bottom: 16px; text-align: center;">เตรียมความพร้อมก่อนเข้าตรวจ</div>
                     
                     <div style="margin-bottom: 15px;">
-                        <label style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px;">
+                        <label data-i18n="pre-exam-select-label" style="font-weight: bold; color: #1e293b; font-size: 14px; display: block; margin-bottom: 8px;">
                             เลือกคลังบุคลิกภาพสำหรับเคสสอบนี้:
                         </label>
                         <select id="pre-exam-preset-select" style="display: none;">
@@ -1025,23 +1163,23 @@ class AIPatientSimulator extends HTMLElement {
                         <div id="pre-exam-avatars-list" class="avatar-scroll-container"></div>
                         
                         <!-- Pre-exam details panel -->
-                        <div id="pre-exam-details-panel" class="persona-details-panel" style="background: #f8fafc; border-color: #e2e8f0; color: #1e293b; margin-bottom: 15px;">
+                        <div id="pre-exam-details-panel" data-i18n="cases-loading" class="persona-details-panel" style="background: #f8fafc; border-color: #e2e8f0; color: #1e293b; margin-bottom: 15px;">
                             กำลังโหลดรายละเอียดบุคลิกภาพ...
                         </div>
 
                         <div style="display: flex; gap: 10px;">
-                            <button id="pre-exam-customize-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                            <button id="pre-exam-customize-btn" data-i18n="customize-persona-btn" style="background-color: #2563eb; color: white; flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
                                 ปรับแต่งอารมณ์...
                             </button>
-                            <button id="pre-exam-delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
+                            <button id="pre-exam-delete-persona-btn" data-i18n="delete-persona-btn" style="background-color: #ea580c; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: bold; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;">
                                 ลบบุคลิก
                             </button>
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button id="pre-exam-cancel-btn" style="background: #64748b; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; transition: background-color 0.2s;">ย้อนกลับ</button>
-                        <button id="pre-exam-start-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); transition: transform 0.2s;">เริ่มสอบซักประวัติ</button>
+                        <button id="pre-exam-cancel-btn" data-i18n="cancel-exam-btn" style="background: #64748b; color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; transition: background-color 0.2s;">ย้อนกลับ</button>
+                        <button id="pre-exam-start-btn" data-i18n="start-exam-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; flex: 1; padding: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-align: center; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3); transition: transform 0.2s;">เริ่มสอบซักประวัติ</button>
                     </div>
                 </div>
             </div>
@@ -1049,7 +1187,7 @@ class AIPatientSimulator extends HTMLElement {
             <!-- GGUF Parameter settings-drawer -->
             <div id="settings-drawer">
                 <div class="drawer-header">
-                    <h3 style="margin: 0; color: #333;">แผงตั้งค่าและจำลองการแสดงออกของคนไข้</h3>
+                    <h3 data-i18n="settings-drawer-title" style="margin: 0; color: #333;">แผงตั้งค่าและจำลองการแสดงออกของคนไข้</h3>
                     <span id="close-drawer-btn" style="font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
                 </div>
                 
@@ -1078,62 +1216,56 @@ class AIPatientSimulator extends HTMLElement {
 
                 <!-- Difficulty Level Preset -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
-                    <label style="font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #444;">ระดับความยากในการซักประวัติ (Difficulty Level Preset)</label>
+                    <label data-i18n="settings-difficulty-label" style="font-weight: bold; margin-bottom: 5px; font-size: 14px; color: #444;">ระดับความยากในการซักประวัติ</label>
                     <div class="difficulty-group">
                         <div class="difficulty-option">
                             <input type="radio" name="difficulty" id="diff-easy" value="easy">
-                            <label for="diff-easy" class="difficulty-label">ง่าย (Easy)</label>
+                            <label for="diff-easy" data-i18n="settings-diff-easy" class="difficulty-label">ง่าย</label>
                         </div>
                         <div class="difficulty-option">
                             <input type="radio" name="difficulty" id="diff-medium" value="medium" checked>
-                            <label for="diff-medium" class="difficulty-label">ปานกลาง (Medium)</label>
+                            <label for="diff-medium" data-i18n="settings-diff-medium" class="difficulty-label">ปานกลาง</label>
                         </div>
                         <div class="difficulty-option">
                             <input type="radio" name="difficulty" id="diff-hard" value="hard">
-                            <label for="diff-hard" class="difficulty-label">ยาก (Hard)</label>
+                            <label for="diff-hard" data-i18n="settings-diff-hard" class="difficulty-label">ยาก</label>
                         </div>
                     </div>
-                    <span style="font-size: 11px; color: #64748b; display: block; margin-top: 4px; line-height: 1.4;">
+                    <span id="settings-diff-desc-span" data-i18n="settings-diff-desc" style="font-size: 11px; color: #64748b; display: block; margin-top: 4px; line-height: 1.4;">
                         • <b>ง่าย:</b> คนไข้ตอบตรงประเด็น ไม่นอกเรื่อง<br>
                         • <b>ปานกลาง:</b> ตอบตามประวัติปกติ มีลีลาตามอารมณ์พอดี<br>
-                        • <b>ยาก:</b> คนไข้โยกโย้ บ่นกังวลสูง หรือเจ็บปวดมาก ต้องซักประวัติอย่างใส่ใจและใช้ Empathy
+                        • <b>ยาก:</b> คนไข้โยกโย้ บ่นกังวลสูง หรือเจ็บปวดมาก ต้องซักประวัติอย่างใส่ใจและใช้ความเข้าใจเห็นอกเห็นใจ
                     </span>
                 </div>
 
                 <!-- Dynamic Emotional Persona Settings Drawer Pane -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
-                    <label for="preset-select">เลือกแม่แบบบุคลิกภาพ (Standard Presets)</label>
+                    <label for="preset-select" data-i18n="settings-preset-label">เลือกแม่แบบบุคลิกภาพ</label>
                     <select id="preset-select">
-                        <option value="cooperative">ให้ความร่วมมือดี / ใจเย็น (Cooperative)</option>
-                        <option value="normal">ปกติ (Normal)</option>
-                        <option value="anxious">วิตกกังวล / ตื่นตระหนก (Anxious)</option>
-                        <option value="severe_pain">เจ็บปวดรุนแรง (Severe Pain Preset)</option>
-                        <option value="combative">โกรธ / ก้าวร้าวเหวี่ยงหมอ (Combative)</option>
-                        <option value="depressed">ซึมเศร้า / ท้อแท้เหนื่อยล้า (Depressed)</option>
-                        <option value="custom">ปรับแต่งอารมณ์เอง...</option>
+                        <!-- Options populated dynamically by translateUI -->
                     </select>
                 </div>
 
                 <div class="form-group" id="emotion-sliders-group">
-                    <label>ระดับการตอบสนองด้านอารมณ์พื้นฐาน</label>
+                    <label data-i18n="settings-emotion-title">ระดับการตอบสนองด้านอารมณ์พื้นฐาน</label>
                     
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 13px; color: #555;">ความโกรธ/ก้าวร้าว: <span id="anger-val" class="slider-val">0%</span></span>
+                        <span style="font-size: 13px; color: #555;"><span data-i18n="settings-emotion-anger">ความโกรธ/ก้าวร้าว:</span> <span id="anger-val" class="slider-val">0%</span></span>
                         <input type="range" id="anger-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
                     </div>
                     
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 13px; color: #555;">ความเศร้า/อ่อนแอ: <span id="sadness-val" class="slider-val">0%</span></span>
+                        <span style="font-size: 13px; color: #555;"><span data-i18n="settings-emotion-sadness">ความเศร้า/อ่อนแอ:</span> <span id="sadness-val" class="slider-val">0%</span></span>
                         <input type="range" id="sadness-slider" min="0" max="100" step="5" value="0" style="width: 100%;">
                     </div>
                     
                     <div style="margin-bottom: 8px;">
-                        <span style="font-size: 13px; color: #555;">ความสุข/สงบนิ่ง: <span id="happiness-val" class="slider-val">100%</span></span>
+                        <span style="font-size: 13px; color: #555;"><span data-i18n="settings-emotion-happiness">ความสุข/สงบนิ่ง:</span> <span id="happiness-val" class="slider-val">100%</span></span>
                         <input type="range" id="happiness-slider" min="0" max="100" step="5" value="100" style="width: 100%;">
                     </div>
                     
                     <div style="background: #e9ecef; padding: 8px; border-radius: 6px; font-size: 11px; color: #495057; margin-top: 10px;">
-                        <b>PAD Model Vectors:</b> 
+                        <b data-i18n="settings-pad-vectors">ค่าเวกเตอร์อารมณ์ PAD:</b> 
                         P: <span id="pad-p" style="font-weight: bold; color: #0d6efd;">1.00</span> | 
                         A: <span id="pad-a" style="font-weight: bold; color: #dc3545;">-0.50</span> | 
                         D: <span id="pad-d" style="font-weight: bold; color: #198754;">0.50</span>
@@ -1141,15 +1273,15 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
 
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px;">
-                    <label for="prompt-textarea">ข้อกำหนดพฤติกรรมและการแสดงออกเพิ่มเติม (Additional Behavior Instructions)</label>
-                    <textarea id="prompt-textarea" placeholder="ระบุพฤติกรรมเสริม เช่น 'คนไข้ปากเบี้ยวเล็กน้อยเวลากล่าว', 'อ่อนแรงครึ่งซีก', หรือ 'มีความ sensitive ร้องไห้ง่ายมาก' เพื่อท้าทายทักษะการซักประวัติ"></textarea>
-                    <span style="font-size: 11px; color: #888;">*หมายเหตุ: คำสั่งนี้จะส่งไปช่วยเสริมพฤติกรรมการแสดงออกของคนไข้สมมติ โดยไม่รบกวนบทยืนยันอาการหลักของเคสแพทย์จำลอง*</span>
+                    <label for="prompt-textarea" data-i18n="settings-extra-instructions">ข้อกำหนดพฤติกรรมและการแสดงออกเพิ่มเติม</label>
+                    <textarea id="prompt-textarea" data-i18n="settings-extra-placeholder" placeholder="ระบุพฤติกรรมเสริม เช่น 'คนไข้ปากเบี้ยวเล็กน้อยเวลากล่าว', 'อ่อนแรงครึ่งซีก', หรือ 'มีความอ่อนไหวง่าย ร้องไห้ง่ายมาก' เพื่อท้าทายทักษะการซักประวัติ"></textarea>
+                    <span id="settings-extra-note-span" data-i18n="settings-extra-note" style="font-size: 11px; color: #888;">*หมายเหตุ: คำสั่งนี้จะส่งไปช่วยเสริมพฤติกรรมการแสดงออกของคนไข้สมมติ โดยไม่รบกวนบทยืนยันอาการหลักของเคสแพทย์จำลอง*</span>
                 </div>
 
                 <!-- Save to Bank Box -->
                 <div class="form-group" style="border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: bold; color: #334155;">
-                        <input type="checkbox" id="save-to-bank-checkbox"> บันทึกการปรับจูนลงในคลังเก็บข้อมูลส่วนตัว (Save Configuration to Bank)
+                        <input type="checkbox" id="save-to-bank-checkbox"> <span data-i18n="settings-save-bank">บันทึกการปรับจูนลงในคลังเก็บข้อมูลส่วนตัว</span>
                     </label>
                     
                     <div id="bank-input-group" style="display: none; margin-top: 10px; background: #f1f5f9; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1;">
@@ -1166,7 +1298,7 @@ class AIPatientSimulator extends HTMLElement {
                 </div>
 
                 <div style="text-align: center; margin-top: 15px;">
-                    <button id="save-settings-btn" style="background-color: #198754; width: 100%;">บันทึกการปรับจูน</button>
+                    <button id="save-settings-btn" data-i18n="settings-save-btn" style="background-color: #198754; width: 100%;">บันทึกการปรับจูน</button>
                 </div>
             </div>
 
@@ -1190,10 +1322,10 @@ class AIPatientSimulator extends HTMLElement {
             <!-- Specific Syndrome case selection cards grid -->
             <div id="cases-grid-screen" style="display: none;">
                 <div class="cases-header">
-                    <h3 style="margin: 0; color: #333;">เลือกเคสคนไข้จำลอง</h3>
-                    <button id="back-to-portal-btn" class="back-btn">ย้อนกลับ</button>
+                    <h3 data-i18n="select-case-title" style="margin: 0; color: #333;">เลือกเคสคนไข้จำลอง</h3>
+                    <button id="back-to-portal-btn" data-i18n="back-btn" class="back-btn">ย้อนกลับ</button>
                 </div>
-                <div id="cases-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
+                <div id="cases-loading" data-i18n="cases-loading" style="text-align: center; color: #64748b; padding: 40px 0; font-size: 14px;">
                     กำลังประมวลผลดึงกลุ่มโรคเวกเตอร์...
                 </div>
                 <div id="cases-cards-container" class="cards-grid">
@@ -1203,27 +1335,37 @@ class AIPatientSimulator extends HTMLElement {
             
             <button id="settings-btn" title="ตั้งค่าอาการและอารมณ์คนไข้จำลอง" style="display: block; font-size: 14px; font-weight: bold; background-color: #334155; border-radius: 6px; padding: 6px 12px; border: none; color: white;">ตั้งค่าอารมณ์</button>
             <div class="widget-container" style="display: none;">
-                <h2>AI Patient Simulator (OSCE Practice Room)</h2>
+                <div style="position: relative; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; min-height: 40px; padding-right: 150px; box-sizing: border-box; text-align: left; display: block;">
+                    <h2 data-i18n="widget-title" style="margin: 0; color: #1e3a8a; font-weight: 800; font-size: 20px; line-height: 1.2;">ห้องสอบซักประวัติด้วย AI (OSCE)</h2>
+                    <div style="position: absolute; top: 0; right: 0; display: flex; gap: 4px; z-index: 10;">
+                        <button class="lang-btn" data-lang="th" style="padding: 5px 10px; font-size: 11.5px; font-weight: bold; border-radius: 6px; cursor: pointer; border: 1.5px solid #cbd5e1; transition: 0.2s; background-color: #ea580c; color: white;">ภาษาไทย</button>
+                        <button class="lang-btn" data-lang="en" style="padding: 5px 10px; font-size: 11.5px; font-weight: bold; border-radius: 6px; cursor: pointer; border: 1.5px solid #cbd5e1; transition: 0.2s; background-color: #ffffff; color: #475569;">English</button>
+                    </div>
+                </div>
                 <div id="quota-tracker-bar">☁️ กำลังตรวจสอบโควต้าประมวลผล...</div>
                 <div id="chat-box"></div>
                 
                 <!-- Model Display Info below Chat Box -->
                 <div id="model-display-info" style="font-size: 12px; color: #475569; margin-top: 6px; margin-bottom: 12px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
-                    <span>🤖 โมเดลตอบสนองคนไข้:</span>
-                    <span id="active-model-name" style="color: #2563eb; font-weight: 700;">(รอเริ่มต้นบทสนทนา...)</span>
+                    <span data-i18n="model-display-label">🤖 โมเดลตอบสนองคนไข้:</span>
+                    <span id="active-model-name" data-i18n="model-display-waiting" style="color: #2563eb; font-weight: 700;">(รอเริ่มต้นบทสนทนา...)</span>
+                </div>
+                
+                <!-- Chat Input Row: Text field + Send Button + Mic Button -->
+                <div id="chat-input-row" style="display: flex; gap: 8px; align-items: center; width: 100%; box-sizing: border-box; margin-bottom: 12px;">
+                    <input type="text" id="chat-text-input" data-i18n="chat-input-placeholder" placeholder="พิมพ์คำถามซักประวัติที่นี่ หรือกดไมค์เพื่อพูด..." style="flex: 1; padding: 12px 14px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); font-family: inherit; color: #1e293b;">
+                    <button id="chat-send-btn" data-i18n="chat-send-btn" style="background-color: #2563eb; color: white; border: none; border-radius: 8px; padding: 12px 18px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background-color 0.2s; white-space: nowrap; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15); margin: 0;">ส่ง</button>
+                    <button id="mic-btn" style="background-color: #f1f5f9; color: #475569; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; transition: all 0.2s; flex-shrink: 0; margin: 0; white-space: nowrap;">🎤 คลิกเพื่อพูด</button>
                 </div>
                 
                 <div class="btn-container">
-                    <button id="cancel-portal-btn" style="background-color: #dc3545; display: none;">ยกเลิกการตรวจและกลับหน้าหลัก</button>
-                    <button id="mic-btn">เริ่มบันทึกเสียงพูด</button>
-                    <button id="end-btn" style="background-color: #6c757d;">เสร็จสิ้นการซักประวัติ (End Encounter)</button>
-                    <button id="new-btn" style="background-color: #198754; display: none;">เข้าตรวจคนไข้เคสใหม่</button>
-                    <button id="view-eval-btn" style="background-color: #ffc107; color: #000; display: none;">แสดงผลการประเมินความสามารถ (Show Evaluation)</button>
-                    <button id="portal-btn" style="background-color: #0d6efd; display: none;">กลับสู่หน้าหลัก</button>
-                    <span id="status">กำลังเชื่อมต่อ...</span>
+                    <button id="cancel-portal-btn" data-i18n="cancel-portal-btn" style="background-color: #dc3545; display: none;">ยกเลิกการตรวจและกลับหน้าหลัก</button>
+                    <button id="end-btn" data-i18n="end-btn" style="background-color: #6c757d;">เสร็จสิ้นการซักประวัติ (End Encounter)</button>
+                    <button id="new-btn" data-i18n="new-btn" style="background-color: #198754; display: none;">เข้าตรวจคนไข้เคสใหม่</button>
+                    <button id="view-eval-btn" data-i18n="view-eval-btn" style="background-color: #ffc107; color: #000; display: none;">แสดงผลการประเมินความสามารถ (Show Evaluation)</button>
+                    <button id="portal-btn" data-i18n="portal-btn" style="background-color: #0d6efd; display: none;">กลับสู่หน้าหลัก</button>
+                    <span id="status" data-i18n="status-connecting">กำลังเชื่อมต่อ...</span>
                 </div>
-
-
 
                 <!-- Generic Connection Error Screen -->
                 <div id="setup-wizard">
@@ -1241,7 +1383,7 @@ class AIPatientSimulator extends HTMLElement {
             <div id="eval-modal">
                 <div class="modal-content">
                     <span class="close">&times;</span>
-                    <h2 style="text-align: center;">รายงานและประเมินผลการซักประวัติคนไข้</h2>
+                    <h2 data-i18n="eval-title" style="text-align: center;">รายงานและประเมินผลการซักประวัติคนไข้</h2>
                     <div id="eval-results">
                         <!-- Results will be injected here -->
                     </div>
@@ -1357,10 +1499,36 @@ class AIPatientSimulator extends HTMLElement {
 
         this.disclaimerCancelBtn = this.shadowDOM.getElementById('disclaimer-cancel-btn');
 
+        // Text input & send button setup
+        this.chatTextInput = this.shadowDOM.getElementById('chat-text-input');
+        this.chatSendBtn = this.shadowDOM.getElementById('chat-send-btn');
+
+        if (this.chatSendBtn) {
+            this.chatSendBtn.addEventListener('click', () => this.sendTextMessage());
+        }
+        if (this.chatTextInput) {
+            this.chatTextInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    this.sendTextMessage();
+                }
+            });
+        }
+
+        // Language toggle listeners
+        const langBtns = this.shadowDOM.querySelectorAll('.lang-btn');
+        langBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newLang = e.currentTarget.getAttribute('data-lang');
+                this.currentLanguage = newLang;
+                this.updateLangUIState();
+            });
+        });
+
         // Main Event listeners
         this.micBtn.addEventListener('click', () => this.toggleDictation());
-        this.micBtn.style.backgroundColor = "#0d6efd"; // Standard Blue Mic Reset
-        this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
+        this.micBtn.style.backgroundColor = "#f1f5f9";
+        this.micBtn.style.color = "#475569";
+        this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
         this.endBtn.addEventListener('click', () => this.endSimulation());
         this.newBtn.addEventListener('click', () => this.newSimulation());
         this.viewEvalBtn.addEventListener('click', () => this.showEvaluation());
@@ -1541,40 +1709,164 @@ class AIPatientSimulator extends HTMLElement {
             this.casesLoading.style.display = 'none';
             
             if (this.casesList.length === 0) {
-                this.casesCardsContainer.innerHTML = "<p style='text-align:center; grid-column: 1/-1;'>❌ ไม่พบเคสจำลองในฐานข้อมูล</p>";
+                this.casesCardsContainer.innerHTML = this.currentLanguage === 'en'
+                    ? "<p style='text-align:center; grid-column: 1/-1;'>❌ No cases found in database</p>"
+                    : "<p style='text-align:center; grid-column: 1/-1;'>❌ ไม่พบเคสจำลองในฐานข้อมูล</p>";
                 return;
             }
             
-            this.casesList.forEach(c => {
-                const card = document.createElement('div');
-                card.className = 'case-card';
-                card.addEventListener('click', () => this.startSimulationWithCase(c.id));
-                
-                // Color code category badges
-                let badgeClass = 'badge-fallback';
-                if (c.category.includes("Abdominal") || c.category.includes("ท้อง")) {
-                    badgeClass = 'badge-abdomen';
-                } else if (c.category.includes("Counseling") || c.category.includes("ปรึกษา")) {
-                    badgeClass = 'badge-counseling';
-                } else if (c.category.includes("General") || c.category.includes("ทั่วไป")) {
-                    badgeClass = 'badge-general';
-                }
-                
-                card.innerHTML = `
-                    <div class="case-card-left">
-                        <span class="badge ${badgeClass}">${c.category}</span>
-                        <h4 class="case-title">${c.scenario_name}</h4>
-                    </div>
-                    <div class="case-card-right">
-                        <p class="case-desc"><b>อาการสำคัญ:</b> ${c.chief_complaint}</p>
-                    </div>
-                `;
-                this.casesCardsContainer.appendChild(card);
-            });
+            this.renderCasesList();
         } catch (e) {
             console.error("Failed to load syndromes:", e);
             this.casesLoading.style.display = 'none';
-            this.casesCardsContainer.innerHTML = "<p style='text-align:center; grid-column: 1/-1; color:red;'>❌ ดึงข้อมูลเคสผิดพลาด ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>";
+            this.casesCardsContainer.innerHTML = this.currentLanguage === 'en'
+                ? "<p style='text-align:center; grid-column: 1/-1; color:red;'>❌ Failed to fetch cases, check server connection</p>"
+                : "<p style='text-align:center; grid-column: 1/-1; color:red;'>❌ ดึงข้อมูลเคสผิดพลาด ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>";
+        }
+    }
+
+    renderCasesList() {
+        if (!this.casesCardsContainer || !this.casesList) return;
+        this.casesCardsContainer.innerHTML = "";
+        
+        const lang = this.currentLanguage || 'th';
+        
+        this.casesList.forEach(c => {
+            const localizedCase = this.translateCaseContent(c, lang);
+            
+            const card = document.createElement('div');
+            card.className = 'case-card';
+            card.addEventListener('click', () => this.startSimulationWithCase(localizedCase.id));
+            
+            // Color code category badges
+            let badgeClass = 'badge-fallback';
+            const originalCat = c.category || '';
+            if (originalCat.includes("Abdominal") || originalCat.includes("ท้อง")) {
+                badgeClass = 'badge-abdomen';
+            } else if (originalCat.includes("Counseling") || originalCat.includes("ปรึกษา")) {
+                badgeClass = 'badge-counseling';
+            } else if (originalCat.includes("General") || originalCat.includes("ทั่วไป")) {
+                badgeClass = 'badge-general';
+            }
+            
+            const chiefComplaintLabel = lang === 'en' ? 'Chief Complaint:' : 'อาการสำคัญ:';
+            
+            card.innerHTML = `
+                <div class="case-card-left">
+                    <span class="badge ${badgeClass}">${localizedCase.category}</span>
+                    <h4 class="case-title">${localizedCase.scenario_name}</h4>
+                </div>
+                <div class="case-card-right">
+                    <p class="case-desc"><b>${chiefComplaintLabel}</b> ${localizedCase.chief_complaint}</p>
+                </div>
+            `;
+            this.casesCardsContainer.appendChild(card);
+        });
+    }
+
+    translateCaseContent(c, lang) {
+        const caseCopy = { ...c };
+        
+        // 1. Localize Category
+        let category = caseCopy.category || '';
+        const staticCategories = {
+            'th': {
+                'เคสทั่วไป (GENERAL MEDICINE)': 'เคสทั่วไป',
+                'GENERAL MEDICINE': 'เคสทั่วไป',
+                'General Medicine': 'เคสทั่วไป',
+                'General': 'เคสทั่วไป',
+                'counseling': 'การให้คำปรึกษา',
+                'Counseling': 'การให้คำปรึกษา',
+                'Abdomen': 'ระบบทางเดินอาหาร',
+                'abdomen': 'ระบบทางเดินอาหาร',
+                'ทั่วไป': 'เคสทั่วไป',
+                'ปรึกษา': 'การให้คำปรึกษา',
+                'ท้อง': 'ระบบทางเดินอาหาร'
+            },
+            'en': {
+                'เคสทั่วไป (GENERAL MEDICINE)': 'General Medicine',
+                'GENERAL MEDICINE': 'General Medicine',
+                'General Medicine': 'General Medicine',
+                'General': 'General Medicine',
+                'counseling': 'Counseling',
+                'Counseling': 'Counseling',
+                'Abdomen': 'Abdominal',
+                'abdomen': 'Abdominal',
+                'ทั่วไป': 'General Medicine',
+                'ปรึกษา': 'Counseling',
+                'ท้อง': 'Abdominal',
+                'เคสทั่วไป': 'General Medicine',
+                'การให้คำปรึกษา': 'Counseling',
+                'ระบบทางเดินอาหาร': 'Abdominal'
+            }
+        };
+        
+        if (staticCategories[lang] && staticCategories[lang][category]) {
+            caseCopy.category = staticCategories[lang][category];
+        } else {
+            caseCopy.category = this.cleanOrExtractLanguage(category, lang);
+        }
+        
+        // 2. Localize Scenario Name
+        let name = caseCopy.scenario_name || '';
+        const staticScenarios = {
+            'th': {
+                'Atrial Fibrillation': 'ภาวะหัวใจห้องบนสั่นพลิ้ว',
+                'Essential hypertension': 'โรคความดันโลหิตสูงปฐมภูมิ',
+                'Physiological jaundice หรือ ABO incompatibility': 'ภาวะตัวเหลืองตามธรรมชาติ หรือกลุ่มเลือดเข้ากันไม่ได้'
+            },
+            'en': {
+                'โรคไตหรือโรคหัวใจ': 'Kidney or Heart Disease',
+                'ภาวะน้ำตาลในเลือดต่ำ หรือหัวใจเต้นผิดจังหวะ': 'Hypoglycemia or Arrhythmia',
+                'ฝากครรภ์ปกติ': 'Normal Antenatal Care',
+                'ความเครียด หรือซึมเศร้า': 'Stress or Depression',
+                'ลำไส้อุดตัน หรือท้องผูกเรื้อรัง': 'Bowel Obstruction or Chronic Constipation',
+                'ให้คำปรึกษายาคุมกำเนิด': 'Contraceptive Counseling',
+                'ขี้หูอุดตัน หรือประสาทหูเสื่อม': 'Earwax Impaction or Sensorineural Hearing Loss',
+                'ปลายประสาทอักเสบ หรือหมอนรองกระดูกทับประสาท': 'Peripheral Neuropathy or Herniated Disc',
+                'ให้คำปรึกษาวัคซีนเด็ก/ผู้ใหญ่': 'Childhood/Adult Vaccine Counseling',
+                'ให้คำปรึกษาเลิกสูบบุหรี่': 'Smoking Cessation Counseling',
+                'สงสัยโรคมะเร็งหรือไทรอยด์เป็นพิษ': 'Suspected Cancer or Hyperthyroidism',
+                'ริดสีดวงทวาร หรือเลือดออกในลำไส้': 'Hemorrhoids or Intestinal Bleeding',
+                'ความดันโลหิตสูงหรือภูมิแพ้จมูก': 'Hypertension or Allergic Rhinitis',
+                'ไทรอยด์เป็นพิษ หรือ Essential tremor': 'Hyperthyroidism or Essential Tremor',
+                'เชื้อราที่เล็บ หรือคลับบิงฟิงเกอร์': 'Nail Fungus or Clubbing Fingers',
+                'กินยาพาราเซตามอลเกินขนาด': 'Paracetamol Overdose',
+                'ไข้หวัดใหญ่ หรือออฟฟิศซินโดรม': 'Influenza or Office Syndrome',
+                'กล้ามเนื้ออักเสบ หรือหมอนรองกระดูกทับประสาท': 'Myositis or Herniated Disc',
+                'ไทรอยด์เป็นพิษ หรือหัวใจเต้นผิดจังหวะ': 'Hyperthyroidism or Arrhythmia',
+                'น้ำตาลในเลือดต่ำ หรือติดเชื้อในกระแสเลือด': 'Hypoglycemia or Sepsis',
+                'ยารักษาโรค หรือตับแข็ง': 'Medication side effects or Cirrhosis',
+                'Physiological jaundice หรือ ABO incompatibility': 'Physiological Jaundice or ABO Incompatibility',
+                'เลือดออกในทางเดินอาหารหรือโลหิตจาง': 'Gastrointestinal Bleeding or Anemia',
+                'ออทิสติก หรือขาดการกระตุ้น': 'Autism or Lack of Stimulation'
+            }
+        };
+        
+        if (staticScenarios[lang] && staticScenarios[lang][name]) {
+            caseCopy.scenario_name = staticScenarios[lang][name];
+        } else {
+            caseCopy.scenario_name = this.cleanOrExtractLanguage(name, lang);
+        }
+        
+        // 3. Localize Chief Complaint
+        let cc = caseCopy.chief_complaint || '';
+        caseCopy.chief_complaint = this.cleanOrExtractLanguage(cc, lang);
+        
+        return caseCopy;
+    }
+
+    cleanOrExtractLanguage(text, lang) {
+        if (!text) return '';
+        const match = text.match(/\(([^)]*[A-Za-z][^)]*)\)/);
+        
+        if (lang === 'en') {
+            if (match) {
+                return match[1].trim();
+            }
+            return text;
+        } else {
+            return text.replace(/\s*\([^)]*[A-Za-z][^)]*\)/g, '').trim();
         }
     }
 
@@ -1622,8 +1914,8 @@ class AIPatientSimulator extends HTMLElement {
         // Restore buttons state to active encounter
         this.micBtn.style.display = 'inline-block';
         this.micBtn.disabled = false;
-        this.micBtn.style.backgroundColor = "#0d6efd";
-        this.micBtn.innerText = "🎤 คลิกเพื่อพูด";
+        this.micBtn.style.backgroundColor = "#f1f5f9";
+        this.micBtn.style.color = "#475569";
         
         // Show cancel button at 0 turns (simulation start)
         if (this.cancelPortalBtn) {
@@ -1637,6 +1929,7 @@ class AIPatientSimulator extends HTMLElement {
         if (this.portalBtn) this.portalBtn.style.display = 'none';
         
         this.showScreen('chat');
+        this.updateLangUIState();
         this.connectWS();
     }
 
@@ -1824,7 +2117,7 @@ class AIPatientSimulator extends HTMLElement {
         
         // Flash a status message briefly
         const originalStatus = this.status.innerText;
-        this.status.innerText = "ปรับจูนบุคลิกและระดับอารมณ์เรียบร้อยแล้ว";
+        this.status.innerText = (this.currentLanguage === 'en' ? "Adjusted patient configuration successfully" : "ปรับจูนบุคลิกและระดับอารมณ์เรียบร้อยแล้ว");
         this.status.style.color = "#198754";
         setTimeout(() => {
             this.status.innerText = originalStatus;
@@ -1835,14 +2128,22 @@ class AIPatientSimulator extends HTMLElement {
     // --- Dynamic Persona Bank & LocalStorage Handlers ---
     loadPersonaBank() {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+        const isEn = this.currentLanguage === 'en';
         
-        let selectHtml = `
-            <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
-            <option value="normal">ปกติ (Normal)</option>
-            <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
-            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
-            <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
-            <option value="depressed">ซึมเศร้าเหนื่อยล้า (Depressed Preset)</option>
+        let selectHtml = isEn ? `
+            <option value="cooperative">Cooperative / Calm</option>
+            <option value="normal">Normal</option>
+            <option value="anxious">Highly Anxious</option>
+            <option value="severe_pain">Severe Pain</option>
+            <option value="combative">Combative / Irritable</option>
+            <option value="depressed">Depressed / Fatigued</option>
+        ` : `
+            <option value="cooperative">แม่แบบมาตรฐานคนไข้</option>
+            <option value="normal">ปกติ</option>
+            <option value="anxious">คนไข้วิตกกังวลสูง</option>
+            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง</option>
+            <option value="combative">คนไข้หงุดหงิดห้วน</option>
+            <option value="depressed">คนไข้ซึมเศร้าเหนื่อยล้า</option>
         `;
         
         if (list.length > 0) {
@@ -1850,7 +2151,7 @@ class AIPatientSimulator extends HTMLElement {
                 selectHtml += `<option value="custom_${p.id}">${p.name}</option>`;
             });
         }
-        selectHtml += `<option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>`;
+        selectHtml += `<option value="create_new">${isEn ? 'Customize Mood...' : 'ปรับแต่งระดับอารมณ์ใหม่...'}</option>`;
         this.portalPresetSelect.innerHTML = selectHtml;
         
         const container = this.shadowDOM.getElementById('persona-avatars-list');
@@ -1859,7 +2160,13 @@ class AIPatientSimulator extends HTMLElement {
         const currentVal = this.portalPresetSelect.value;
         container.innerHTML = "";
         
-        const standardAvatars = [
+        const standardAvatars = isEn ? [
+            { val: 'cooperative', label: 'Calm', img: 'images/patient_normal.png' },
+            { val: 'anxious', label: 'Anxious', img: 'images/patient_anxious.png' },
+            { val: 'severe_pain', label: 'Severe Pain', img: 'images/patient_pain.png' },
+            { val: 'combative', label: 'Irritable', img: 'images/patient_angry.png' },
+            { val: 'depressed', label: 'Depressed', img: 'images/patient_depressed.png' }
+        ] : [
             { val: 'cooperative', label: 'ปกติ / ใจเย็น', img: 'images/patient_normal.png' },
             { val: 'anxious', label: 'วิตกกังวลสูง', img: 'images/patient_anxious.png' },
             { val: 'severe_pain', label: 'ปวดรุนแรง', img: 'images/patient_pain.png' },
@@ -1911,7 +2218,7 @@ class AIPatientSimulator extends HTMLElement {
             <div class="avatar-img-wrapper" style="border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #94a3b8; font-weight: 300;">
                 +
             </div>
-            <div class="avatar-label">ปรับแต่งอารมณ์</div>
+            <div class="avatar-label">${isEn ? 'Customize Mood' : 'ปรับแต่งอารมณ์'}</div>
         `;
         addCard.addEventListener('click', () => {
             this.portalPresetSelect.value = 'create_new';
@@ -2001,14 +2308,22 @@ class AIPatientSimulator extends HTMLElement {
 
     loadPreExamPersonaBank() {
         const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
+        const isEn = this.currentLanguage === 'en';
         
-        let selectHtml = `
-            <option value="cooperative">แม่แบบมาตรฐานคนไข้ (Standard Cooperative)</option>
-            <option value="normal">ปกติ (Normal)</option>
-            <option value="anxious">คนไข้วิตกกังวลสูง (Anxious Preset)</option>
-            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)</option>
-            <option value="combative">คนไข้หงุดหงิดห้วน (Combative Preset)</option>
-            <option value="depressed">ซึมเศร้าเหนื่อยล้า (Depressed Preset)</option>
+        let selectHtml = isEn ? `
+            <option value="cooperative">Cooperative / Calm</option>
+            <option value="normal">Normal</option>
+            <option value="anxious">Highly Anxious</option>
+            <option value="severe_pain">Severe Pain</option>
+            <option value="combative">Combative / Irritable</option>
+            <option value="depressed">Depressed / Fatigued</option>
+        ` : `
+            <option value="cooperative">แม่แบบมาตรฐานคนไข้</option>
+            <option value="normal">ปกติ</option>
+            <option value="anxious">คนไข้วิตกกังวลสูง</option>
+            <option value="severe_pain">คนไข้ปวดเกร็งรุนแรง</option>
+            <option value="combative">คนไข้หงุดหงิดห้วน</option>
+            <option value="depressed">คนไข้ซึมเศร้าเหนื่อยล้า</option>
         `;
         
         if (list.length > 0) {
@@ -2016,7 +2331,7 @@ class AIPatientSimulator extends HTMLElement {
                 selectHtml += `<option value="custom_${p.id}">${p.name}</option>`;
             });
         }
-        selectHtml += `<option value="create_new">ปรับแต่งระดับอารมณ์ใหม่...</option>`;
+        selectHtml += `<option value="create_new">${isEn ? 'Customize Mood...' : 'ปรับแต่งระดับอารมณ์ใหม่...'}</option>`;
         
         if (this.preExamPresetSelect) {
             this.preExamPresetSelect.innerHTML = selectHtml;
@@ -2028,7 +2343,13 @@ class AIPatientSimulator extends HTMLElement {
         const currentVal = this.preExamPresetSelect.value;
         container.innerHTML = "";
         
-        const standardAvatars = [
+        const standardAvatars = isEn ? [
+            { val: 'cooperative', label: 'Calm', img: 'images/patient_normal.png' },
+            { val: 'anxious', label: 'Anxious', img: 'images/patient_anxious.png' },
+            { val: 'severe_pain', label: 'Severe Pain', img: 'images/patient_pain.png' },
+            { val: 'combative', label: 'Irritable', img: 'images/patient_angry.png' },
+            { val: 'depressed', label: 'Depressed', img: 'images/patient_depressed.png' }
+        ] : [
             { val: 'cooperative', label: 'ปกติ / ใจเย็น', img: 'images/patient_normal.png' },
             { val: 'anxious', label: 'วิตกกังวลสูง', img: 'images/patient_anxious.png' },
             { val: 'severe_pain', label: 'ปวดรุนแรง', img: 'images/patient_pain.png' },
@@ -2080,7 +2401,7 @@ class AIPatientSimulator extends HTMLElement {
             <div class="avatar-img-wrapper" style="border-style: dashed; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #94a3b8; font-weight: 300;">
                 +
             </div>
-            <div class="avatar-label">ปรับแต่งอารมณ์</div>
+            <div class="avatar-label">${isEn ? 'Customize Mood' : 'ปรับแต่งอารมณ์'}</div>
         `;
         addCard.addEventListener('click', () => {
             this.preExamPresetSelect.value = 'create_new';
@@ -2191,45 +2512,47 @@ class AIPatientSimulator extends HTMLElement {
         let anger = 0, sadness = 0, happiness = 100;
         let extra = "";
         
+        const isEn = this.currentLanguage === 'en';
+        
         if (selectedVal === 'cooperative') {
-            title = "แม่แบบมาตรฐานคนไข้ (Standard Cooperative)";
-            desc = "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            title = isEn ? "Cooperative / Calm" : "แม่แบบมาตรฐานคนไข้";
+            desc = isEn ? "Patient presentation: Polite, cooperative, and responds normally during history taking." : "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
             anger = 0; sadness = 0; happiness = 100;
         } else if (selectedVal === 'normal') {
-            title = "คนไข้บุคลิกทั่วไป (Normal Preset)";
-            desc = "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            title = isEn ? "Normal Patient" : "คนไข้บุคลิกทั่วไป";
+            desc = isEn ? "Patient presentation: General profile, responds with alternating short and long answers." : "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
             anger = 0; sadness = 0; happiness = 50;
         } else if (selectedVal === 'anxious') {
-            title = "คนไข้วิตกกังวลสูง (Anxious Preset)";
-            desc = "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            title = isEn ? "Highly Anxious" : "คนไข้วิตกกังวลสูง";
+            desc = isEn ? "Patient presentation: Highly anxious and panicked, voice trembles, constantly complains of fear." : "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
             anger = 10; sadness = 70; happiness = 10;
         } else if (selectedVal === 'severe_pain') {
-            title = "คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)";
-            desc = "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            title = isEn ? "Severe Pain" : "คนไข้ปวดเกร็งรุนแรง";
+            desc = isEn ? "Patient presentation: Experiencing severe physical pain, frequently groaning or crying out." : "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
             anger = 25; sadness = 75; happiness = 0;
         } else if (selectedVal === 'combative') {
-            title = "คนไข้หงุดหงิดห้วน (Combative Preset)";
-            desc = "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            title = isEn ? "Combative / Irritable" : "คนไข้หงุดหงิดห้วน";
+            desc = isEn ? "Patient presentation: Irritable, easily angered, answers abruptly, hostile or resistant." : "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
             anger = 90; sadness = 10; happiness = 0;
         } else if (selectedVal === 'depressed') {
-            title = "คนไข้ซึมเศร้าเหนื่อยล้า (Depressed Preset)";
-            desc = "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            title = isEn ? "Depressed / Fatigued" : "คนไข้ซึมเศร้าเหนื่อยล้า";
+            desc = isEn ? "Patient presentation: Depressed, discouraged, fatigued, slow to respond." : "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
             anger = 0; sadness = 85; happiness = 0;
         } else if (selectedVal.startsWith('custom_')) {
             const id = selectedVal.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                title = `บุคลิกคลังส่วนตัว: ${p.name}`;
-                desc = "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤติกรรมเสริมพิเศษส่วนตัว";
+                title = (isEn ? "Custom Mood: " : "บุคลิกคลังส่วนตัว: ") + p.name;
+                desc = isEn ? "Patient presentation: Custom emotions and special behavioral instructions." : "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤทีพฤติกรรมเสริมพิเศษส่วนตัว";
                 anger = p.anger;
                 sadness = p.sadness;
                 happiness = p.happiness;
                 if (p.additional_instructions) {
-                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>คำสั่งเสริม:</b> "${p.additional_instructions}"</div>`;
+                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>${isEn ? 'Extra Instructions:' : 'คำสั่งเสริม:'}</b> "${p.additional_instructions}"</div>`;
                 }
             } else {
-                title = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+                title = isEn ? "Persona configuration not found" : "ไม่พบข้อมูลบุคลิกจำลองนี้";
             }
         }
         
@@ -2238,21 +2561,21 @@ class AIPatientSimulator extends HTMLElement {
             <div class="persona-desc" style="color: #475569;">${desc}</div>
             <div class="emotion-bars">
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความสุข / สงบ</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Happiness / Calmness' : 'ความสุข / สงบ'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-happiness" style="width: ${happiness}%"></div>
                     </div>
                     <span class="emotion-bar-val" style="color: #475569;">${happiness}%</span>
                 </div>
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความเศร้า / อ่อนไหว</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Sadness / Sensitivity' : 'ความเศร้า / อ่อนไหว'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-sadness" style="width: ${sadness}%"></div>
                     </div>
                     <span class="emotion-bar-val" style="color: #475569;">${sadness}%</span>
                 </div>
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความโกรธ / ก้าวร้าว</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Hostility / Anger' : 'ความโกรธ / ก้าวร้าว'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-anger" style="width: ${anger}%"></div>
                     </div>
@@ -2354,45 +2677,47 @@ class AIPatientSimulator extends HTMLElement {
         let anger = 0, sadness = 0, happiness = 100;
         let extra = "";
         
+        const isEn = this.currentLanguage === 'en';
+        
         if (selectedVal === 'cooperative') {
-            title = "แม่แบบมาตรฐานคนไข้ (Standard Cooperative)";
-            desc = "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
+            title = isEn ? "Cooperative / Calm" : "แม่แบบมาตรฐานคนไข้";
+            desc = isEn ? "Patient presentation: Polite, cooperative, and responds normally during history taking." : "ลักษณะคนไข้: สุภาพ เรียบร้อย ให้ความร่วมมือในการซักประวัติอย่างปกติ";
             anger = 0; sadness = 0; happiness = 100;
         } else if (selectedVal === 'normal') {
-            title = "คนไข้บุคลิกทั่วไป (Normal Preset)";
-            desc = "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
+            title = isEn ? "Normal Patient" : "คนไข้บุคลิกทั่วไป";
+            desc = isEn ? "Patient presentation: General profile, responds with alternating short and long answers." : "ลักษณะคนไข้: บุคลิกปานกลางทั่วไป ตอบตามคำถามสั้นยาวสลับกัน";
             anger = 0; sadness = 0; happiness = 50;
         } else if (selectedVal === 'anxious') {
-            title = "คนไข้วิตกกังวลสูง (Anxious Preset)";
-            desc = "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
+            title = isEn ? "Highly Anxious" : "คนไข้วิตกกังวลสูง";
+            desc = isEn ? "Patient presentation: Highly anxious and panicked, voice trembles, constantly complains of fear." : "ลักษณะคนไข้: กังวลและตื่นตระหนกสูง พูดจาสั่นเครือ บ่นกลัวตลอดเวลา";
             anger = 10; sadness = 70; happiness = 10;
         } else if (selectedVal === 'severe_pain') {
-            title = "คนไข้ปวดเกร็งรุนแรง (Severe Pain Preset)";
-            desc = "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
+            title = isEn ? "Severe Pain" : "คนไข้ปวดเกร็งรุนแรง";
+            desc = isEn ? "Patient presentation: Experiencing severe physical pain, frequently groaning or crying out." : "ลักษณะคนไข้: มีอาการเจ็บปวดอย่างรุนแรง ร้องโอดโอยทางร่างกายปนคำพูดบ่อยๆ";
             anger = 25; sadness = 75; happiness = 0;
         } else if (selectedVal === 'combative') {
-            title = "คนไข้หงุดหงิดห้วน (Combative Preset)";
-            desc = "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
+            title = isEn ? "Combative / Irritable" : "คนไข้หงุดหงิดห้วน";
+            desc = isEn ? "Patient presentation: Irritable, easily angered, answers abruptly, hostile or resistant." : "ลักษณะคนไข้: หงุดหงิด โมโหง่าย ตอบห้วน กระด้าง ไร้หางเสียง หรือต่อต้าน";
             anger = 90; sadness = 10; happiness = 0;
         } else if (selectedVal === 'depressed') {
-            title = "คนไข้ซึมเศร้าเหนื่อยล้า (Depressed Preset)";
-            desc = "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
+            title = isEn ? "Depressed / Fatigued" : "คนไข้ซึมเศร้าเหนื่อยล้า";
+            desc = isEn ? "Patient presentation: Depressed, discouraged, fatigued, slow to respond." : "ลักษณะคนไข้: ซึมเศร้า ท้อแท้ อ่อนเพลียไร้เรี่ยวแรง ตอบช้ามาก";
             anger = 0; sadness = 85; happiness = 0;
         } else if (selectedVal.startsWith('custom_')) {
             const id = selectedVal.replace('custom_', '');
             const list = JSON.parse(localStorage.getItem('osce_custom_personas') || '[]');
             const p = list.find(item => item.id === id);
             if (p) {
-                title = `บุคลิกคลังส่วนตัว: ${p.name}`;
-                desc = "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤติกรรมเสริมพิเศษส่วนตัว";
+                title = (isEn ? "Custom Mood: " : "บุคลิกคลังส่วนตัว: ") + p.name;
+                desc = isEn ? "Patient presentation: Custom emotions and special behavioral instructions." : "ลักษณะคนไข้: ปรับแต่งคุณสมบัติอารมณ์และคำสั่งพฤติกรรมเสริมพิเศษส่วนตัว";
                 anger = p.anger;
                 sadness = p.sadness;
                 happiness = p.happiness;
                 if (p.additional_instructions) {
-                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>คำสั่งเสริม:</b> "${p.additional_instructions}"</div>`;
+                    extra = `<div style="font-size: 11px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-left: 3px solid #ea580c; border-radius: 4px; color: #475569;"><b>${isEn ? 'Extra Instructions:' : 'คำสั่งเสริม:'}</b> "${p.additional_instructions}"</div>`;
                 }
             } else {
-                title = "ไม่พบข้อมูลบุคลิกจำลองนี้";
+                title = isEn ? "Persona configuration not found" : "ไม่พบข้อมูลบุคลิกจำลองนี้";
             }
         }
         
@@ -2401,21 +2726,21 @@ class AIPatientSimulator extends HTMLElement {
             <div class="persona-desc" style="color: #475569;">${desc}</div>
             <div class="emotion-bars">
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความสุข / สงบ</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Happiness / Calmness' : 'ความสุข / สงบ'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-happiness" style="width: ${happiness}%"></div>
                     </div>
                     <span class="emotion-bar-val" style="color: #475569;">${happiness}%</span>
                 </div>
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความเศร้า / อ่อนไหว</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Sadness / Sensitivity' : 'ความเศร้า / อ่อนไหว'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-sadness" style="width: ${sadness}%"></div>
                     </div>
                     <span class="emotion-bar-val" style="color: #475569;">${sadness}%</span>
                 </div>
                 <div class="emotion-row">
-                    <span class="emotion-label" style="color: #64748b;">ความโกรธ / ก้าวร้าว</span>
+                    <span class="emotion-label" style="color: #64748b;">${isEn ? 'Hostility / Anger' : 'ความโกรธ / ก้าวร้าว'}</span>
                     <div class="emotion-bar-bg" style="background: #f1f5f9;">
                         <div class="emotion-bar-fill fill-anger" style="width: ${anger}%"></div>
                     </div>
@@ -2460,13 +2785,13 @@ class AIPatientSimulator extends HTMLElement {
             wsUrl = wsUrl.replace(/\/$/, '') + '/ws/chat';
         }
 
-        this.status.innerText = "กำลังเชื่อมต่อกับเซิร์ฟเวอร์...";
+        this.status.innerText = (this.currentLanguage === 'en' ? "Connecting to server..." : "กำลังเชื่อมต่อกับเซิร์ฟเวอร์...");
         
         try {
             this.socket = new WebSocket(wsUrl);
 
             this.socket.onopen = () => {
-                this.status.innerText = "ระบบพร้อมทำงาน...";
+                this.status.innerText = (this.currentLanguage === 'en' ? "System ready..." : "ระบบพร้อมทำงาน...");
                 this.setupWizard.style.display = 'none';
             };
 
@@ -2502,13 +2827,13 @@ class AIPatientSimulator extends HTMLElement {
                         this.enqueueTTS(this.sentenceBuffer.trim());
                         this.sentenceBuffer = "";
                     }
-                    this.status.innerText = "รอรับคำถามต่อไป...";
+                    this.status.innerText = (this.currentLanguage === 'en' ? "Waiting for your next question..." : "รอรับคำถามต่อไป...");
                     return;
                 }
 
                 // If receiving session closed notice
                 if (text.startsWith("Session saved.")) {
-                    this.status.innerText = "บันทึกประวัติเรียบร้อยแล้ว";
+                    this.status.innerText = (this.currentLanguage === 'en' ? "Session saved successfully." : "บันทึกประวัติเรียบร้อยแล้ว");
                     return;
                 }
 
@@ -2522,7 +2847,7 @@ class AIPatientSimulator extends HTMLElement {
                 if (!this.currentPatientMsgDiv) {
                     this.currentPatientMsgDiv = document.createElement('div');
                     this.currentPatientMsgDiv.className = 'msg patient';
-                    this.currentPatientMsgDiv.innerText = "คนไข้: ";
+                    this.currentPatientMsgDiv.innerText = (this.currentLanguage === 'en' ? "Patient: " : "คนไข้: ");
                     this.chatBox.appendChild(this.currentPatientMsgDiv);
                 }
 
@@ -2539,18 +2864,18 @@ class AIPatientSimulator extends HTMLElement {
 
             this.socket.onclose = () => {
                 this.hideTypingIndicator();
-                this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
+                this.status.innerText = (this.currentLanguage === 'en' ? "Server connection lost..." : "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...");
                 this.setupWizard.style.display = 'block';
             };
             
             this.socket.onerror = () => {
                 this.hideTypingIndicator();
-                this.status.innerText = "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...";
+                this.status.innerText = (this.currentLanguage === 'en' ? "Server connection lost..." : "ดำเนินการเชื่อมต่อเซิร์ฟเวอร์ขัดข้อง...");
                 this.setupWizard.style.display = 'block';
             };
         } catch (e) {
             console.error("WebSocket construction failed:", e);
-            this.status.innerText = "ไม่สามารถเชื่อมต่อได้";
+            this.status.innerText = (this.currentLanguage === 'en' ? "Unable to connect" : "ไม่สามารถเชื่อมต่อได้");
             this.setupWizard.style.display = 'block';
         }
     }
@@ -2584,26 +2909,24 @@ class AIPatientSimulator extends HTMLElement {
 
             this.mediaRecorder.onstart = () => {
                 this.isRecording = true;
-                this.status.innerText = "กำลังบันทึกเสียงพูดของคุณ (คลิกอีกครั้งเพื่อส่ง)...";
-                this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
+                this.status.innerText = (this.currentLanguage === 'en' ? "Recording voice... Click mic again to stop." : "กำลังบันทึกเสียงพูดของคุณ (คลิกอีกครั้งเพื่อหยุด)...");
+                this.micBtn.innerText = (this.currentLanguage === 'en' ? "⏹️ Stop" : "⏹️ หยุดบันทึก");
                 this.micBtn.style.backgroundColor = "#dc3545";
+                this.micBtn.style.color = "white";
                 
                 if (this.cancelPortalBtn) {
                     this.cancelPortalBtn.style.display = 'none';
                 }
                 
-                this.tempMsgDiv = document.createElement('div');
-                this.tempMsgDiv.className = 'msg user';
-                this.tempMsgDiv.innerText = "แพทย์: กำลังบันทึกเสียง...";
-                this.chatBox.appendChild(this.tempMsgDiv);
-                this.chatBox.scrollTop = this.chatBox.scrollHeight;
+                this.chatTextInput.value = "";
                 this.currentPatientMsgDiv = null;
             };
 
             this.mediaRecorder.onstop = async () => {
                 this.isRecording = false;
-                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
-                this.micBtn.style.backgroundColor = "#0d6efd";
+                this.micBtn.innerText = (this.currentLanguage === 'en' ? "🎤 Speak" : "🎤 คลิกเพื่อพูด");
+                this.micBtn.style.backgroundColor = "#f1f5f9";
+                this.micBtn.style.color = "#475569";
                 
                 // Stop all tracks to release microphone
                 stream.getTracks().forEach(track => track.stop());
@@ -2611,17 +2934,16 @@ class AIPatientSimulator extends HTMLElement {
                 const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
                 
                 if (audioBlob.size < 1000) { // Too short/empty
-                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
                     if (this.cancelPortalBtn) this.cancelPortalBtn.style.display = 'inline-block';
                     return;
                 }
 
-                this.status.innerText = "กำลังแปลงเสียงเป็นข้อความ...";
-                if (this.tempMsgDiv) this.tempMsgDiv.innerText = "แพทย์: กำลังประมวลผลเสียง...";
+                this.status.innerText = (this.currentLanguage === 'en' ? "Transcribing voice..." : "กำลังแปลงเสียงเป็นข้อความ...");
 
                 try {
                     const formData = new FormData();
                     formData.append("file", audioBlob, "voice_query.webm");
+                    formData.append("language", this.currentLanguage);
 
                     const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
                     const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/stt`, {
@@ -2636,10 +2958,9 @@ class AIPatientSimulator extends HTMLElement {
                         const data = await response.json();
                         const text = data.text ? data.text.trim() : "";
                         if (text) {
-                            if (this.tempMsgDiv) {
-                                this.tempMsgDiv.innerText = "แพทย์: " + text;
-                            }
-                            this.sendViaWS(text);
+                            this.chatTextInput.value = text;
+                            this.chatTextInput.focus();
+                            this.status.innerText = (this.currentLanguage === 'en' ? "Transcribed! You can edit or click Send." : "ถอดความสำเร็จ! สามารถแก้ไขหรือกดส่งได้");
                         } else {
                             throw new Error("Empty transcription returned");
                         }
@@ -2649,9 +2970,7 @@ class AIPatientSimulator extends HTMLElement {
                 } catch (err) {
                     console.warn("Backend STT failed, falling back to client-side browser STT:", err);
                     this.backendSTTFailed = true;
-                    if (this.tempMsgDiv) this.tempMsgDiv.remove();
-                    
-                    this.status.innerText = "ระบบสลับไปใช้ระบบแปลเสียงในตัวเบราว์เซอร์...";
+                    this.status.innerText = (this.currentLanguage === 'en' ? "Switching to browser STT..." : "ระบบสลับไปใช้ระบบแปลเสียงในตัวเบราว์เซอร์...");
                     this.runLocalSpeechRecognition();
                 }
             };
@@ -2670,25 +2989,22 @@ class AIPatientSimulator extends HTMLElement {
             this.recognition = new webkitSpeechRecognition();
             this.recognition.continuous = true;
             this.recognition.interimResults = true;
-            this.recognition.lang = "th-TH";
+            this.recognition.lang = this.currentLanguage === 'en' ? 'en-US' : 'th-TH';
 
             let final_transcript = '';
 
             this.recognition.onstart = () => {
                 this.isRecording = true;
-                this.status.innerText = "ระบบกำลังรับเสียงซักประวัติ (คลิกส่งเมื่อพูดเสร็จสิ้น)...";
-                this.micBtn.innerText = "ส่งข้อความเสียงซักประวัติ";
+                this.status.innerText = (this.currentLanguage === 'en' ? "Recording voice... Click Stop when finished." : "ระบบกำลังรับเสียงซักประวัติ (คลิกหยุดเมื่อพูดเสร็จ)...");
+                this.micBtn.innerText = (this.currentLanguage === 'en' ? "⏹️ Stop" : "⏹️ หยุดบันทึก");
                 this.micBtn.style.backgroundColor = "#dc3545";
+                this.micBtn.style.color = "white";
                 
                 if (this.cancelPortalBtn) {
                     this.cancelPortalBtn.style.display = 'none';
                 }
                 
-                this.tempMsgDiv = document.createElement('div');
-                this.tempMsgDiv.className = 'msg user';
-                this.tempMsgDiv.innerText = "แพทย์: ...";
-                this.chatBox.appendChild(this.tempMsgDiv);
-                this.chatBox.scrollTop = this.chatBox.scrollHeight;
+                this.chatTextInput.value = "";
                 this.currentPatientMsgDiv = null;
             };
 
@@ -2698,32 +3014,48 @@ class AIPatientSimulator extends HTMLElement {
                     if (e.results[i].isFinal) final_transcript += e.results[i][0].transcript;
                     else interim_transcript += e.results[i][0].transcript;
                 }
-                if (this.tempMsgDiv) {
-                    this.tempMsgDiv.innerText = "แพทย์: " + final_transcript + interim_transcript;
-                }
+                this.chatTextInput.value = final_transcript + interim_transcript;
             };
 
             this.recognition.onend = () => {
                 this.isRecording = false;
-                this.micBtn.innerText = "เริ่มบันทึกเสียงพูด";
-                this.micBtn.style.backgroundColor = "#0d6efd";
+                this.micBtn.innerText = (this.currentLanguage === 'en' ? "🎤 Speak" : "🎤 คลิกเพื่อพูด");
+                this.micBtn.style.backgroundColor = "#f1f5f9";
+                this.micBtn.style.color = "#475569";
 
-                if (final_transcript.trim() !== '') {
-                    this.sendViaWS(final_transcript);
-                } else {
-                    if (this.tempMsgDiv) {
-                        this.tempMsgDiv.remove();
-                    }
-                    if (this.cancelPortalBtn) {
-                        this.cancelPortalBtn.style.display = 'inline-block';
-                    }
+                if (this.cancelPortalBtn) {
+                    this.cancelPortalBtn.style.display = 'inline-block';
                 }
+                this.chatTextInput.focus();
+                this.status.innerText = (this.currentLanguage === 'en' ? "Transcribed! You can edit or click Send." : "ถอดความสำเร็จ! สามารถแก้ไขหรือกดส่งได้");
             };
 
             this.recognition.start();
         } else {
-            alert("เว็บเบราว์เซอร์นี้ไม่สนับสนุนการแปลงเสียงพูดเป็นข้อความ (Speech Recognition) กรุณาใช้ Google Chrome");
+            alert(this.currentLanguage === 'en' 
+                ? "This browser does not support Speech Recognition. Please use Google Chrome."
+                : "เว็บเบราว์เซอร์นี้ไม่สนับสนุนการแปลงเสียงพูดเป็นข้อความ (Speech Recognition) กรุณาใช้ Google Chrome");
         }
+    }
+
+    sendTextMessage() {
+        if (!this.chatTextInput) return;
+        const text = this.chatTextInput.value.trim();
+        if (!text) return;
+
+        // Clear the input field
+        this.chatTextInput.value = "";
+
+        // Append user's text message to chat box
+        const userMsgDiv = document.createElement('div');
+        userMsgDiv.className = 'msg user';
+        userMsgDiv.innerText = (this.currentLanguage === 'en' ? "Doctor: " : "แพทย์: ") + text;
+        this.chatBox.appendChild(userMsgDiv);
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+        this.currentPatientMsgDiv = null;
+
+        // Send via WebSocket
+        this.sendViaWS(text);
     }
 
     sendViaWS(text) {
@@ -2750,6 +3082,7 @@ class AIPatientSimulator extends HTMLElement {
                     api_tier: this.apiTier, // 👈 Send current tier (free or paid/Typhoon)
                     system_prompt_custom: "", // 👈 Students no longer override custom system prompt templates!
                     additional_instructions: this.customPrompt, // 👈 Send additional behavior instructions!
+                    language: this.currentLanguage, // 👈 Send selected language
                     emotions: {
                         anger: this.anger,
                         sadness: this.sadness,
@@ -2761,13 +3094,124 @@ class AIPatientSimulator extends HTMLElement {
         }
     }
 
+    updateLangUIState() {
+        const langBtns = this.shadowDOM.querySelectorAll('.lang-btn');
+        langBtns.forEach(btn => {
+            const btnLang = btn.getAttribute('data-lang');
+            if (btnLang === this.currentLanguage) {
+                btn.style.backgroundColor = '#ea580c';
+                btn.style.color = 'white';
+            } else {
+                btn.style.backgroundColor = '#ffffff';
+                btn.style.color = '#475569';
+            }
+        });
+        
+        // Also translate UI
+        this.translateUI();
+    }
+
+    translateUI() {
+        const lang = this.currentLanguage || 'th';
+        const t = this.translations[lang];
+        if (!t) return;
+        
+        // Translate elements with data-i18n attribute
+        const elements = this.shadowDOM.querySelectorAll('[data-i18n]');
+        elements.forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) {
+                if (el.tagName === 'INPUT' && el.type === 'text') {
+                    el.placeholder = t[key];
+                } else if (el.tagName === 'INPUT' && el.type === 'checkbox') {
+                    // Skip
+                } else if (el.tagName === 'SPAN' && (el.id === 'settings-diff-desc-span' || el.id === 'settings-extra-note-span')) {
+                    el.innerHTML = t[key];
+                } else {
+                    el.innerText = el.getAttribute('data-prefix') 
+                        ? el.getAttribute('data-prefix') + t[key]
+                        : t[key];
+                }
+            }
+        });
+
+        // Translate settings drawer preset dropdown
+        const presetSelect = this.shadowDOM.getElementById('preset-select');
+        if (presetSelect) {
+            const currentVal = presetSelect.value;
+            presetSelect.innerHTML = lang === 'en' ? `
+                <option value="cooperative">Cooperative / Calm</option>
+                <option value="normal">Normal</option>
+                <option value="anxious">Highly Anxious</option>
+                <option value="severe_pain">Severe Pain</option>
+                <option value="combative">Combative / Irritable</option>
+                <option value="depressed">Depressed / Fatigued</option>
+                <option value="custom">Customize Mood...</option>
+            ` : `
+                <option value="cooperative">ให้ความร่วมมือดี / ใจเย็น</option>
+                <option value="normal">ปกติ</option>
+                <option value="anxious">วิตกกังวล / ตื่นตระหนก</option>
+                <option value="severe_pain">เจ็บปวดรุนแรง</option>
+                <option value="combative">โกรธ / ก้าวร้าวเหวี่ยงหมอ</option>
+                <option value="depressed">ซึมเศร้า / ท้อแท้เหนื่อยล้า</option>
+                <option value="custom">ปรับแต่งอารมณ์เอง...</option>
+            `;
+            presetSelect.value = currentVal;
+        }
+
+        // Translate textarea placeholder
+        const promptTextarea = this.shadowDOM.getElementById('prompt-textarea');
+        if (promptTextarea && t['settings-extra-placeholder']) {
+            promptTextarea.placeholder = t['settings-extra-placeholder'];
+        }
+        
+        // Adjust standard mic button text based on language if not currently recording
+        if (this.micBtn && !this.isRecording) {
+            this.micBtn.innerText = lang === 'en' ? "🎤 Speak" : "🎤 คลิกเพื่อพูด";
+        }
+        
+        // Dynamic status mapping helper
+        if (this.status) {
+            const currentStatus = this.status.innerText;
+            if (lang === 'en') {
+                if (currentStatus === 'กำลังเชื่อมต่อ...' || currentStatus === 'กำลังเชื่อมต่อกับเซิร์ฟเวอร์...') this.status.innerText = t['status-connecting'];
+                else if (currentStatus === 'รอเริ่มต้นบทสนทนา...') this.status.innerText = t['model-display-waiting'];
+                else if (currentStatus === 'รอรับคำถามต่อไป...') this.status.innerText = t['status-waiting'];
+                else if (currentStatus === 'กำลังบันทึกเสียงพูด...') this.status.innerText = t['status-recording'];
+                else if (currentStatus === 'กำลังประมวลผล...') this.status.innerText = t['status-processing'];
+                else if (currentStatus === 'กำลังถอดเสียงจากคลาวด์...') this.status.innerText = t['status-transcribing'];
+            } else {
+                if (currentStatus === 'Connecting...' || currentStatus === 'Connecting to server...') this.status.innerText = t['status-connecting'];
+                else if (currentStatus === '(Waiting to begin encounter...)') this.status.innerText = t['model-display-waiting'];
+                else if (currentStatus === 'Waiting for your next question...') this.status.innerText = t['status-waiting'];
+                else if (currentStatus === 'Recording voice...') this.status.innerText = t['status-recording'];
+                else if (currentStatus === 'Processing...') this.status.innerText = t['status-processing'];
+                else if (currentStatus === 'Transcribing audio in cloud...') this.status.innerText = t['status-transcribing'];
+            }
+        }
+
+        // Rebuild persona lists and summaries with new language (disable recursion by calling raw internal logic directly)
+        this.rebuildPersonaDropdownsAndAvatars();
+        
+        // Dynamically translate and re-render the cases grid list
+        if (this.casesList && this.casesList.length > 0) {
+            this.renderCasesList();
+        }
+    }
+
+    rebuildPersonaDropdownsAndAvatars() {
+        this.loadPersonaBank();
+        this.loadPreExamPersonaBank();
+    }
+
     showTypingIndicator() {
         this.hideTypingIndicator();
         
         const indicatorDiv = document.createElement('div');
         indicatorDiv.className = 'msg patient typing-indicator';
+        const label = this.currentLanguage === 'en' ? "Patient: " : "คนไข้: ";
         indicatorDiv.innerHTML = `
-            <span>คนไข้: </span>
+            <span>${label}</span>
             <div class="typing-indicator-dots" style="display: inline-flex; align-items: center; gap: 4px; vertical-align: middle;">
                 <div class="typing-indicator-dot"></div>
                 <div class="typing-indicator-dot"></div>
@@ -2872,9 +3316,14 @@ class AIPatientSimulator extends HTMLElement {
 
     showEvaluationDetail(evaluation, scenarioName, sessionId) {
         this.evalModal.style.display = 'block';
+        const lang = this.currentLanguage || 'th';
+        const localizedName = this.translateCaseContent({ scenario_name: scenarioName, category: '', chief_complaint: '' }, lang).scenario_name;
+        const encounterLabel = lang === 'en' ? 'Encounter Case:' : 'เคสการรักษา:';
+        const idLabel = lang === 'en' ? 'Evaluation ID:' : 'รหัสประเมิน:';
+        
         this.evalResults.innerHTML = `
-            <h3 style="text-align: center; margin-top: 0; color: #1a1e29;">เคสการรักษา: ${scenarioName}</h3>
-            <div style="font-size: 11px; text-align: center; color: #64748b; margin-bottom: 15px;">รหัสประเมิน: ${sessionId}</div>
+            <h3 style="text-align: center; margin-top: 0; color: #1a1e29;">${encounterLabel} ${localizedName}</h3>
+            <div style="font-size: 11px; text-align: center; color: #64748b; margin-bottom: 15px;">${idLabel} ${sessionId}</div>
             ${this.renderEvaluationHTML(evaluation)}
         `;
     }
@@ -2883,6 +3332,8 @@ class AIPatientSimulator extends HTMLElement {
         this.showScreen('history');
         this.historyLoading.style.display = 'block';
         this.historyListContainer.innerHTML = "";
+        
+        const lang = this.currentLanguage || 'th';
         
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
@@ -2893,7 +3344,9 @@ class AIPatientSimulator extends HTMLElement {
             this.historyLoading.style.display = 'none';
             
             if (!historyList || historyList.length === 0) {
-                this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: #64748b;'>ยังไม่มีประวัติการสอบประเมินของคุณในระบบ</p>";
+                this.historyListContainer.innerHTML = lang === 'en'
+                    ? "<p style='text-align:center; padding: 40px 0; color: #64748b;'>No exam or practice history found in the system.</p>"
+                    : "<p style='text-align:center; padding: 40px 0; color: #64748b;'>ยังไม่มีประวัติการสอบประเมินของคุณในระบบ</p>";
                 return;
             }
             
@@ -2904,18 +3357,29 @@ class AIPatientSimulator extends HTMLElement {
                 card.style.justifyContent = 'space-between';
                 card.style.alignItems = 'center';
                 
-                const timestamp = s.updated_at ? new Date(s.updated_at).toLocaleString('th-TH', { hour12: false }) : 'ไม่ระบุ';
-                const scoreText = s.score ? `คะแนน ${s.score}/5` : 'รอดำเนินการ';
+                const localizedScenarioName = this.translateCaseContent({ scenario_name: s.scenario_name, category: '', chief_complaint: '' }, lang).scenario_name;
+                
+                const timestamp = s.updated_at ? new Date(s.updated_at).toLocaleString(lang === 'en' ? 'en-US' : 'th-TH', { hour12: false }) : 'N/A';
+                const scoreText = s.score 
+                    ? (lang === 'en' ? `Score: ${s.score}/5` : `คะแนน ${s.score}/5`) 
+                    : (lang === 'en' ? 'Pending' : 'รอดำเนินการ');
                 const statusClass = s.status === 'completed' ? 'badge-general' : 'badge-abdomen';
-                const statusText = s.status === 'completed' ? 'เสร็จสิ้นการซัก' : 'ยังไม่จบการซัก';
+                const statusText = s.status === 'completed' 
+                    ? (lang === 'en' ? 'Completed' : 'เสร็จสิ้นการซัก') 
+                    : (lang === 'en' ? 'In Progress' : 'ยังไม่จบการซัก');
+                
+                const caseLabel = lang === 'en' ? 'Case:' : 'เคส:';
+                const examDateText = lang === 'en'
+                    ? `📅 Date: ${timestamp} | 💬 ${s.turns} turns`
+                    : `📅 สอบเมื่อ: ${timestamp} | 💬 คุยไป ${s.turns} ประโยค`;
                 
                 card.innerHTML = `
                     <div style="flex: 1; text-align: left;">
                         <span class="badge ${statusClass}">${statusText}</span>
-                        <h4 class="case-title" style="margin-top: 5px;">เคส: ${s.scenario_name}</h4>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">📅 สอบเมื่อ: ${timestamp} | 💬 คุยไป ${s.turns} ประโยค</div>
+                        <h4 class="case-title" style="margin-top: 5px;">${caseLabel} ${localizedScenarioName}</h4>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${examDateText}</div>
                     </div>
-                    <div style="text-align: right; min-width: 80px;">
+                    <div style="text-align: right; min-width: 100px;">
                         <b style="color: #f59e0b; font-size: 16px;">${scoreText}</b>
                     </div>
                 `;
@@ -2931,7 +3395,9 @@ class AIPatientSimulator extends HTMLElement {
         } catch (e) {
             console.error("Failed to load student history:", e);
             this.historyLoading.style.display = 'none';
-            this.historyListContainer.innerHTML = "<p style='text-align:center; padding: 40px 0; color: red;'>❌ ดึงประวัติผิดพลาด ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>";
+            this.historyListContainer.innerHTML = lang === 'en'
+                ? "<p style='text-align:center; padding: 40px 0; color: red;'>❌ Failed to load history, check server connection</p>"
+                : "<p style='text-align:center; padding: 40px 0; color: red;'>❌ ดึงประวัติผิดพลาด ตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์</p>";
         }
     }
 
@@ -2968,7 +3434,8 @@ class AIPatientSimulator extends HTMLElement {
                         gender: this.currentPatientGender || "female",
                         pleasure: this.pad ? parseFloat(this.pad.p || 0.0) : 0.0,
                         arousal: this.pad ? parseFloat(this.pad.a || 0.0) : 0.0,
-                        dominance: this.pad ? parseFloat(this.pad.d || 0.0) : 0.0
+                        dominance: this.pad ? parseFloat(this.pad.d || 0.0) : 0.0,
+                        language: this.currentLanguage || "th"
                     })
                 });
 
@@ -3023,7 +3490,8 @@ class AIPatientSimulator extends HTMLElement {
         // 2. Fallback / Quota-saved: Use native Web Speech API speechSynthesis
         if (typeof SpeechSynthesisUtterance !== 'undefined' && window.speechSynthesis) {
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = "th-TH";
+            const isEn = this.currentLanguage === 'en';
+            utterance.lang = isEn ? "en-US" : "th-TH";
             
             // Adjust rate for native voice based on PAD
             let rate = 1.0;
@@ -3040,30 +3508,57 @@ class AIPatientSimulator extends HTMLElement {
 
             try {
                 const voices = window.speechSynthesis.getVoices();
-                const thVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.replace('_', '-').startsWith('th-'));
-                if (thVoices.length > 0) {
-                    const gender = (this.currentPatientGender || 'female').toLowerCase();
-                    let matchedVoice = null;
-                    if (gender === 'male' || gender === 'elderly_male') {
-                        matchedVoice = thVoices.find(v => 
-                            v.name.toLowerCase().includes('niwat') || 
-                            v.name.toLowerCase().includes('male') || 
-                            v.name.toLowerCase().includes('man') ||
-                            v.name.toLowerCase().includes('pattara')
-                        );
-                    } else {
-                        matchedVoice = thVoices.find(v => 
-                            v.name.toLowerCase().includes('premwadee') || 
-                            v.name.toLowerCase().includes('achara') || 
-                            v.name.toLowerCase().includes('female') || 
-                            v.name.toLowerCase().includes('woman') || 
-                            v.name.toLowerCase().includes('google')
-                        );
+                if (isEn) {
+                    const enVoices = voices.filter(v => v.lang === 'en-US' || v.lang.replace('_', '-').startsWith('en-'));
+                    if (enVoices.length > 0) {
+                        const gender = (this.currentPatientGender || 'female').toLowerCase();
+                        let matchedVoice = null;
+                        if (gender === 'male' || gender === 'elderly_male') {
+                            matchedVoice = enVoices.find(v => 
+                                v.name.toLowerCase().includes('david') || 
+                                v.name.toLowerCase().includes('male') || 
+                                v.name.toLowerCase().includes('man') ||
+                                v.name.toLowerCase().includes('microsoft')
+                            );
+                        } else {
+                            matchedVoice = enVoices.find(v => 
+                                v.name.toLowerCase().includes('zira') || 
+                                v.name.toLowerCase().includes('female') || 
+                                v.name.toLowerCase().includes('woman') || 
+                                v.name.toLowerCase().includes('google')
+                            );
+                        }
+                        if (!matchedVoice) {
+                            matchedVoice = enVoices[0];
+                        }
+                        utterance.voice = matchedVoice;
                     }
-                    if (!matchedVoice) {
-                        matchedVoice = thVoices[0];
+                } else {
+                    const thVoices = voices.filter(v => v.lang === 'th-TH' || v.lang.replace('_', '-').startsWith('th-'));
+                    if (thVoices.length > 0) {
+                        const gender = (this.currentPatientGender || 'female').toLowerCase();
+                        let matchedVoice = null;
+                        if (gender === 'male' || gender === 'elderly_male') {
+                            matchedVoice = thVoices.find(v => 
+                                v.name.toLowerCase().includes('niwat') || 
+                                v.name.toLowerCase().includes('male') || 
+                                v.name.toLowerCase().includes('man') ||
+                                v.name.toLowerCase().includes('pattara')
+                            );
+                        } else {
+                            matchedVoice = thVoices.find(v => 
+                                v.name.toLowerCase().includes('premwadee') || 
+                                v.name.toLowerCase().includes('achara') || 
+                                v.name.toLowerCase().includes('female') || 
+                                v.name.toLowerCase().includes('woman') || 
+                                v.name.toLowerCase().includes('google')
+                            );
+                        }
+                        if (!matchedVoice) {
+                            matchedVoice = thVoices[0];
+                        }
+                        utterance.voice = matchedVoice;
                     }
-                    utterance.voice = matchedVoice;
                 }
             } catch (e) {
                 console.error("Error setting speech voice:", e);

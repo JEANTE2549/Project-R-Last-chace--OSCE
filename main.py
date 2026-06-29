@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, File, UploadFile
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Response, File, UploadFile, Form
 from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 import ollama
@@ -220,25 +220,34 @@ def determine_case_gender(case_data) -> str:
     case_hash = sum(ord(c) for c in fallback_seed)
     return "female" if case_hash % 2 == 0 else "male"
 
-def construct_patient_prompt(case_data, revealed_info, pad=None):
+def construct_patient_prompt(case_data, revealed_info, pad=None, language="th"):
     revealed_text = "\n".join([f"- {k}: {v}" for k, v in revealed_info.items()])
     if not revealed_text:
-        revealed_text = "(ยังไม่มีข้อมูลที่เปิดเผย)"
+        if language == "en":
+            revealed_text = "(No information revealed yet)"
+        else:
+            revealed_text = "(ยังไม่มีข้อมูลที่เปิดเผย)"
 
     gender = determine_case_gender(case_data)
     
     # Base gender directives
     gender_directives = ""
-    if gender == "female":
-        gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
-    elif gender == "male":
-        gender_directives = "คุณเป็นเพศชาย แทนตัวเองว่า 'ผม' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
-    elif gender == "elderly_female":
-        gender_directives = "คุณเป็นหญิงสูงอายุ แทนตัวเองว่า 'ยาย' หรือ 'ป้า' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
-    elif gender == "elderly_male":
-        gender_directives = "คุณเป็นชายสูงอายุ แทนตัวเองว่า 'ตา' หรือ 'ลุง' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
+    if language == "en":
+        if gender == "female" or gender == "elderly_female":
+            gender_directives = "You are a female patient. Refer to yourself naturally as female (e.g. 'I', 'me')."
+        else:
+            gender_directives = "You are a male patient. Refer to yourself naturally as male (e.g. 'I', 'me')."
     else:
-        gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+        if gender == "female":
+            gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+        elif gender == "male":
+            gender_directives = "คุณเป็นเพศชาย แทนตัวเองว่า 'ผม' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
+        elif gender == "elderly_female":
+            gender_directives = "คุณเป็นหญิงสูงอายุ แทนตัวเองว่า 'ยาย' หรือ 'ป้า' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
+        elif gender == "elderly_male":
+            gender_directives = "คุณเป็นชายสูงอายุ แทนตัวเองว่า 'ตา' หรือ 'ลุง' (ห้ามหลุดแทนตัวเองด้วยคำของผู้หญิง เช่น ค่ะ/คะ)"
+        else:
+            gender_directives = "คุณเป็นเพศหญิง แทนตัวเองว่า 'ฉัน' หรือ 'หนู' (ห้ามหลุดแทนตัวเองด้วยคำของผู้ชาย เช่น ครับ/ผม)"
         
     # Adaptive politeness logic based on PAD
     politeness_directives = ""
@@ -249,24 +258,54 @@ def construct_patient_prompt(case_data, revealed_info, pad=None):
         
         # Severe pain (Pleasure < -0.3) or Combative Anger (Arousal > 0.4 and Dominance > 0.4)
         if p < -0.3 or (a > 0.4 and d > 0.4):
-            if p < -0.3:
-                politeness_directives = "คุณกำลังเจ็บปวดทางร่างกายอย่างรุนแรง ทรมานมาก ไม่จำเป็นต้องสุภาพ ให้ตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') พูดสั้นห้วนปนเสียงร้องแสดงความเจ็บปวด"
+            if language == "en":
+                if p < -0.3:
+                    politeness_directives = "You are in severe physical pain. You do not need to be polite. Omit polite speech (like 'doctor' or 'sir') and express severe distress."
+                else:
+                    politeness_directives = "You are highly irritated/angry. Speak abruptly, harshly, showing displeasure, and do not be polite."
             else:
-                politeness_directives = "คุณกำลังรู้สึกโกรธ ขัดเคืองใจ หรือไม่พอใจมาก ไม่จำเป็นต้องสุภาพ ให้ละเว้นหรือตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') ตอบห้วนกระด้าง ไร้หางเสียง แสดงความไม่พอใจอย่างชัดเจน"
+                if p < -0.3:
+                    politeness_directives = "คุณกำลังเจ็บปวดทางร่างกายอย่างรุนแรง ทรมานมาก ไม่จำเป็นต้องสุภาพ ให้ตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') พูดสั้นห้วนปนเสียงร้องแสดงความเจ็บปวด"
+                else:
+                    politeness_directives = "คุณกำลังรู้สึกโกรธ ขัดเคืองใจ หรือไม่พอใจมาก ไม่จำเป็นต้องสุภาพ ให้ละเว้นหรือตัดคำลงท้ายสุภาพออกทั้งหมด (ไม่ต้องใช้คำว่า 'ค่ะ', 'คะ' หรือ 'ครับ') ตอบห้วนกระด้าง ไร้หางเสียง แสดงความไม่พอใจอย่างชัดเจน"
         else:
             # Polite baseline
-            if gender in ["female", "elderly_female"]:
-                politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+            if language == "en":
+                politeness_directives = "You are in a cooperative mood. Politely refer to the student as 'doctor' (e.g., 'Yes, doctor', 'Thank you, doctor')."
             else:
-                politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
+                if gender in ["female", "elderly_female"]:
+                    politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+                else:
+                    politeness_directives = "คุณมีอารมณ์สุภาพ/ปกติ ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
     else:
         # Default fallback to polite based on gender
-        if gender in ["female", "elderly_female"]:
-            politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+        if language == "en":
+            politeness_directives = "Politely refer to the student as 'doctor'."
         else:
-            politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
+            if gender in ["female", "elderly_female"]:
+                politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ค่ะ/คะ' เสมอ"
+            else:
+                politeness_directives = "ให้พูดลงท้ายสุภาพด้วยคำว่า 'ครับ' เสมอ"
 
-    prompt = f"""คุณคือคนไข้สมมติ อาการสำคัญ (Chief Complaint): {case_data['chief_complaint']}
+    if language == "en":
+        prompt = f"""You are a simulated patient in an OSCE exam. Chief Complaint: {case_data['chief_complaint']}
+
+Your identity and mood guidelines:
+- {gender_directives}
+- {politeness_directives}
+
+Your medical history information (use this to answer the student):
+{revealed_text}
+
+CRITICAL RULES:
+1. You must respond STRICTLY in English. Translate any Thai details from your medical history into natural English on the fly.
+2. Answer shortly like a sick person who is anxious.
+3. NEVER disclose any information that is not in the medical history list above.
+4. If the student asks about something not in your history list, respond by dodging the question, saying "I don't remember" or "I'm not sure".
+5. NEVER mention the name of your diagnosis/syndrome ({case_data['scenario_name']}) under any circumstances.
+6. Answer only one question at a time; do not run on or give long monologues."""
+    else:
+        prompt = f"""คุณคือคนไข้สมมติ อาการสำคัญ (Chief Complaint): {case_data['chief_complaint']}
 
 ข้อมูลอัตลักษณ์บุคคลของคุณ:
 - {gender_directives}
@@ -588,9 +627,10 @@ class TTSRequest(BaseModel):
     pleasure: float = 0.0
     arousal: float = 0.0
     dominance: float = 0.0
+    language: str = "th"
 
 @app.post("/api/stt")
-async def speech_to_text(file: UploadFile = File(...)):
+async def speech_to_text(file: UploadFile = File(...), language: str = Form("th")):
     audio_bytes = await file.read()
     
     # Tier 1: Hugging Face Whisper (completely free using HF token)
@@ -598,6 +638,7 @@ async def speech_to_text(file: UploadFile = File(...)):
         try:
             url = "https://api-inference.huggingface.co/models/openai/whisper-large-v3-turbo"
             headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
+            # Specify language in params for Hugging Face inference API if needed (or let it auto-detect)
             async with httpx.AsyncClient() as client:
                 response = await client.post(url, headers=headers, content=audio_bytes, timeout=30.0)
                 if response.status_code == 200:
@@ -626,7 +667,7 @@ async def speech_to_text(file: UploadFile = File(...)):
             }
             data = {
                 "model": "whisper-1",
-                "language": "th"
+                "language": language
             }
             
             async with httpx.AsyncClient() as client:
@@ -653,6 +694,9 @@ async def text_to_speech(req: TTSRequest):
     if ELEVENLABS_API_KEY and ELEVENLABS_API_KEY != "your_elevenlabs_api_key_here":
         try:
             voice_id = ELEVENLABS_FEMALE_VOICE_ID if "female" in gender else ELEVENLABS_MALE_VOICE_ID
+            if req.language == "en":
+                if voice_id in ["EXAVITQu4vr4xnSDxMaL", "ErXwobaYiN019PkySvjV", "", None]:
+                    voice_id = "21m00Tcm4TlvDq8ikWAM" if "female" in gender else "29vD33N1CtxCmqQRPOHJ"
             url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
             
             headers = {
@@ -801,13 +845,17 @@ async def websocket_endpoint(websocket: WebSocket):
             # --- PAD Emotional Prompt Compiler (Phase 3) ---
             emotions = client_config.get("emotions", {})
             pad = emotions.get("pad", {})
-            system_prompt = construct_patient_prompt(session_data['case_data'], session_data['revealed_info'], pad=pad)
+            lang = client_config.get("language") or client_config.get("lang") or "th"
+            system_prompt = construct_patient_prompt(session_data['case_data'], session_data['revealed_info'], pad=pad, language=lang)
             
             custom_template = client_config.get("system_prompt_custom")
             if custom_template:
                 revealed_text = "\n".join([f"- {k}: {v}" for k, v in session_data['revealed_info'].items()])
                 if not revealed_text:
-                    revealed_text = "(ยังไม่มีการเปิดเผยข้อมูล)"
+                    if lang == "en":
+                        revealed_text = "(No information revealed yet)"
+                    else:
+                        revealed_text = "(ยังไม่มีการเปิดเผยข้อมูล)"
                 system_prompt = custom_template.replace("{revealed_info}", revealed_text)
 
             if pad:
@@ -815,29 +863,53 @@ async def websocket_endpoint(websocket: WebSocket):
                 a = float(pad.get("a", 0.0))
                 d = float(pad.get("d", 0.0))
                 directives = []
-                if a > 0.4:
-                    directives.append("คุณกังวลและตื่นตระหนกสูงมาก พูดจาสั่นเครือ ใช้ประโยคสั้นๆ พูดเร็วปนหอบ ร้องขอการรับประกันหรือบ่นกลัว")
-                elif a < -0.4:
-                    directives.append("คุณเหนื่อยล้าอย่างรุนแรง พูดช้ามาก ลากเสียงยาว หรือทิ้งระยะเวลาตอบ นิ่งเงียบ และบอกปัดว่าไม่มีแรงบ่อยๆ")
-                if p < -0.3:
-                    directives.append("บ่นว่าปวดหรือทรมานทางร่างกายอย่างมาก สอดแทรกคำแสดงความปวดถี่ๆ (เช่น โอ๊ย... เจ็บเหลือเกินครับ/ค่ะ, ไม่ไหวแล้ว)")
-                elif p > 0.4:
-                    directives.append("คุณรู้สึกสงบ ปลอดภัย และอารมณ์ดี ให้ความร่วมมือค่อนข้างสุภาพเรียบร้อย")
-                if d < -0.3:
-                    directives.append("รู้สึกอ่อนแอช่วยเหลือตัวเองไม่ได้อย่างมาก มีความอ่อนน้อมและร้องขอวิงวอนแพทย์ช่วยชีวิต")
-                elif d > 0.4:
-                    if p < 0.0:
-                        directives.append("คุณมีอารมณ์โฉบเฉี่ยว โกรธและไม่พอใจแพทย์อย่างยิ่ง ห้วน กระด้าง ไร้หางเสียง แสดงท่าทีต่อต้านและบ่นการบริการ")
-                    else:
-                        directives.append("คุณเชื่อมั่นในตัวเองสูง พร้อมสอบถามกลับถึงความรู้แพทย์อย่างตรงไปตรงมา")
+                if lang == "en":
+                    if a > 0.4:
+                        directives.append("You are extremely anxious/panicky. Speak with a trembling voice, using short, hurried, panting sentences, asking for reassurance or complaining of fear.")
+                    elif a < -0.4:
+                        directives.append("You are extremely fatigued, speaking very slowly, drawing out words, pausing, and often saying you lack strength.")
+                    if p < -0.3:
+                        directives.append("Complain of severe physical pain or torment, inserting groans/pain sounds frequently (e.g., Ow... it hurts so much, doctor, I can't take it).")
+                    elif p > 0.4:
+                        directives.append("You feel calm, safe, and in a good mood. Be cooperative and polite.")
+                    if d < -0.3:
+                        directives.append("Feel weak and highly helpless, submissive, and pleading for the doctor's help.")
+                    elif d > 0.4:
+                        if p < 0.0:
+                            directives.append("You are irritable, highly angry, and displeased with the doctor. Speak abruptly, harshly, showing opposition and complaining about service.")
+                        else:
+                            directives.append("You have high self-confidence, ready to directly ask the doctor questions back.")
+                else:
+                    if a > 0.4:
+                        directives.append("คุณกังวลและตื่นตระหนกสูงมาก พูดจาสั่นเครือ ใช้ประโยคสั้นๆ พูดเร็วปนหอบ ร้องขอการรับประกันหรือบ่นกลัว")
+                    elif a < -0.4:
+                        directives.append("คุณเหนื่อยล้าอย่างรุนแรง พูดช้ามาก ลากเสียงยาว หรือทิ้งระยะเวลาตอบ นิ่งเงียบ และบอกปัดว่าไม่มีแรงบ่อยๆ")
+                    if p < -0.3:
+                        directives.append("บ่นว่าปวดหรือทรมานทางร่างกายอย่างมาก สอดแทรกคำแสดงความปวดถี่ๆ (เช่น โอ๊ย... เจ็บเหลือเกินครับ/ค่ะ, ไม่ไหวแล้ว)")
+                    elif p > 0.4:
+                        directives.append("คุณรู้สึกสงบ ปลอดภัย และอารมณ์ดี ให้ความร่วมมือค่อนข้างสุภาพเรียบร้อย")
+                    if d < -0.3:
+                        directives.append("รู้สึกอ่อนแอช่วยเหลือตัวเองไม่ได้อย่างมาก มีความอ่อนน้อมและร้องขอวิงวอนแพทย์ช่วยชีวิต")
+                    elif d > 0.4:
+                        if p < 0.0:
+                            directives.append("คุณมีอารมณ์โฉบเฉี่ยว โกรธและไม่พอใจแพทย์อย่างยิ่ง ห้วน กระด้าง ไร้หางเสียง แสดงท่าทีต่อต้านและบ่นการบริการ")
+                        else:
+                            directives.append("คุณเชื่อมั่นในตัวเองสูง พร้อมสอบถามกลับถึงความรู้แพทย์อย่างตรงไปตรงมา")
+                
                 if directives:
                     directives_str = "\n".join([f"- {text}" for text in directives])
-                    system_prompt += f"\n\n[ข้อบังคับทางอารมณ์และพฤติกรรมในขณะนี้]\n{directives_str}"
+                    if lang == "en":
+                        system_prompt += f"\n\n[Active Emotional and Behavioral Directives]\n{directives_str}"
+                    else:
+                        system_prompt += f"\n\n[ข้อบังคับทางอารมณ์และพฤติกรรมในขณะนี้]\n{directives_str}"
 
             # Append student's custom clinical behavioral booster instructions if present
             additional_instructions = client_config.get("additional_instructions")
             if additional_instructions:
-                system_prompt += f"\n\n[คำสั่งและพฤติกรรมเสริมคนไข้เพิ่มเติม]:\n- {additional_instructions}"
+                if lang == "en":
+                    system_prompt += f"\n\n[Additional Patient Directives and Behaviors]:\n- {additional_instructions}"
+                else:
+                    system_prompt += f"\n\n[คำสั่งและพฤติกรรมเสริมคนไข้เพิ่มเติม]:\n- {additional_instructions}"
 
             messages_to_send = [{'role': 'system', 'content': system_prompt}]
             
