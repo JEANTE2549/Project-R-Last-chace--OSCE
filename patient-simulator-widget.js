@@ -1346,9 +1346,43 @@ class AIPatientSimulator extends HTMLElement {
                 <div id="chat-box"></div>
                 
                 <!-- Model Display Info below Chat Box -->
-                <div id="model-display-info" style="font-size: 12px; color: #475569; margin-top: 6px; margin-bottom: 12px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <div id="model-display-info" style="font-size: 12px; color: #475569; margin-top: 6px; margin-bottom: 8px; font-weight: 500; text-align: left; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
                     <span data-i18n="model-display-label">🤖 โมเดลตอบสนองคนไข้:</span>
                     <span id="active-model-name" data-i18n="model-display-waiting" style="color: #2563eb; font-weight: 700;">(รอเริ่มต้นบทสนทนา...)</span>
+                </div>
+
+                <!-- Physical Exam & Lab Request Panel -->
+                <div id="exam-labs-panel" style="margin-top: 5px; margin-bottom: 12px; border: 1.5px solid #cbd5e1; border-radius: 8px; overflow: hidden; background-color: #ffffff; font-family: inherit;">
+                    <div class="tabs-header" style="display: flex; background-color: #f8fafc; border-bottom: 1.5px solid #cbd5e1;">
+                        <button type="button" id="tab-btn-pe" style="flex: 1; padding: 10px; border: none; background-color: #ffffff; font-weight: bold; cursor: pointer; font-size: 13px; color: #1e3a8a; border-right: 1px solid #e2e8f0; outline: none; transition: 0.2s;" data-i18n="tab-pe">🩺 ตรวจร่างกาย (Physical Exam)</button>
+                        <button type="button" id="tab-btn-labs" style="flex: 1; padding: 10px; border: none; background-color: #f8fafc; font-weight: bold; cursor: pointer; font-size: 13px; color: #64748b; outline: none; transition: 0.2s;" data-i18n="tab-labs">🔬 ส่งตรวจแล็บ (Lab & Imaging)</button>
+                    </div>
+                    
+                    <!-- Tab content for PE -->
+                    <div id="tab-content-pe" style="padding: 12px; display: block; text-align: left;">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;" data-i18n="pe-instruction">เลือกตำแหน่งอวัยวะเพื่อเริ่มการตรวจร่างกายจำลอง:</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                            <button type="button" class="pe-action-btn" data-target="General Appearance" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">General</button>
+                            <button type="button" class="pe-action-btn" data-target="Chest & Lungs" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">Lungs</button>
+                            <button type="button" class="pe-action-btn" data-target="Heart" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">Heart</button>
+                            <button type="button" class="pe-action-btn" data-target="Abdomen" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">Abdomen</button>
+                            <button type="button" class="pe-action-btn" data-target="Neurological" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">Neuro</button>
+                            <button type="button" class="pe-action-btn" data-target="HEENT" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">HEENT</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab content for Labs -->
+                    <div id="tab-content-labs" style="padding: 12px; display: none; text-align: left;">
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;" data-i18n="labs-instruction">เลือกผลแล็บหรือฟิล์มตรวจเพิ่มเติมจำลอง:</div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                            <button type="button" class="lab-action-btn" data-target="CBC" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">CBC</button>
+                            <button type="button" class="lab-action-btn" data-target="EKG" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">EKG</button>
+                            <button type="button" class="lab-action-btn" data-target="Chest X-Ray" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">CXR</button>
+                            <button type="button" class="lab-action-btn" data-target="Urinalysis" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">UA</button>
+                            <button type="button" class="lab-action-btn" data-target="Liver Function Test" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">LFT</button>
+                            <button type="button" class="lab-action-btn" data-target="Electrolytes" style="padding: 8px; font-size: 11px; border-radius: 6px; border: 1px solid #cbd5e1; background-color: #f8fafc; font-weight: bold; cursor: pointer; color: #334155; transition: 0.2s;">Electrolyte</button>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Chat Input Row: Text field + Send Button + Mic Button -->
@@ -1375,6 +1409,32 @@ class AIPatientSimulator extends HTMLElement {
                     </p>
                     <div style="margin-top: 25px;">
                         <button id="retry-conn-btn" style="background-color: #dc3545; width: 100%; padding: 12px; font-weight: bold;">พยายามเชื่อมต่อใหม่อีกครั้ง</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confidence Calibration Modal -->
+            <div id="confidence-modal" class="auth-overlay" style="display: none; align-items: center; justify-content: center; z-index: 1000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5);">
+                <div style="background: white; border-radius: 12px; padding: 25px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); box-sizing: border-box;">
+                    <h3 style="margin-top: 0; color: #1e3a8a;" data-i18n="conf-modal-title">วิเคราะห์วินิจฉัยและประเมินระดับความมั่นใจ</h3>
+                    <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;" data-i18n="conf-modal-desc">ระบุวินิจฉัยและประเมินระดับความมั่นใจของคุณก่อนส่งตรวจประเมิน:</p>
+                    
+                    <div style="margin-bottom: 15px; text-align: left;">
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;" data-i18n="conf-diagnosis-label">ผลวินิจฉัยโรคของคุณ (Suspected Diagnosis):</label>
+                        <input type="text" id="conf-diagnosis-input" placeholder="ตัวอย่าง: Appendicitis" style="width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 6px; font-size: 13px; margin-top: 4px; box-sizing: border-box; font-family: inherit;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; text-align: left;">
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;" data-i18n="conf-score-label">ระดับความมั่นใจ (Confidence Score):</label>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px;">
+                            <input type="range" id="conf-score-input" min="0" max="100" value="80" style="flex: 1; cursor: pointer;">
+                            <span id="conf-score-val" style="font-weight: bold; font-size: 14px; color: #2563eb; min-width: 40px; text-align: right;">80%</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="conf-cancel-btn" style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f1f5f9; color: #475569; font-weight: bold; cursor: pointer; font-size: 13px; font-family: inherit;" data-i18n="conf-btn-cancel">กลับไปแชทต่อ</button>
+                        <button type="button" id="conf-submit-btn" style="flex: 1; padding: 10px; border: none; border-radius: 6px; background-color: #2563eb; color: white; font-weight: bold; cursor: pointer; font-size: 13px; font-family: inherit;" data-i18n="conf-btn-submit">ยืนยันผลสอบ</button>
                     </div>
                 </div>
             </div>
@@ -1513,6 +1573,81 @@ class AIPatientSimulator extends HTMLElement {
                 }
             });
         }
+
+        // Resolve pivoted Phase 4 elements
+        this.tabBtnPe = this.shadowDOM.getElementById('tab-btn-pe');
+        this.tabBtnLabs = this.shadowDOM.getElementById('tab-btn-labs');
+        this.tabContentPe = this.shadowDOM.getElementById('tab-content-pe');
+        this.tabContentLabs = this.shadowDOM.getElementById('tab-content-labs');
+
+        this.confidenceModal = this.shadowDOM.getElementById('confidence-modal');
+        this.confDiagnosisInput = this.shadowDOM.getElementById('conf-diagnosis-input');
+        this.confScoreInput = this.shadowDOM.getElementById('conf-score-input');
+        this.confScoreVal = this.shadowDOM.getElementById('conf-score-val');
+        this.confCancelBtn = this.shadowDOM.getElementById('conf-cancel-btn');
+        this.confSubmitBtn = this.shadowDOM.getElementById('conf-submit-btn');
+
+        // Tab switching listeners
+        if (this.tabBtnPe && this.tabBtnLabs) {
+            this.tabBtnPe.addEventListener('click', () => {
+                this.tabContentPe.style.display = 'block';
+                this.tabContentLabs.style.display = 'none';
+                this.tabBtnPe.style.backgroundColor = '#ffffff';
+                this.tabBtnPe.style.color = '#1e3a8a';
+                this.tabBtnLabs.style.backgroundColor = '#f8fafc';
+                this.tabBtnLabs.style.color = '#64748b';
+            });
+            this.tabBtnLabs.addEventListener('click', () => {
+                this.tabContentPe.style.display = 'none';
+                this.tabContentLabs.style.display = 'block';
+                this.tabBtnPe.style.backgroundColor = '#f8fafc';
+                this.tabBtnPe.style.color = '#64748b';
+                this.tabBtnLabs.style.backgroundColor = '#ffffff';
+                this.tabBtnLabs.style.color = '#1e3a8a';
+            });
+        }
+
+        // Calibration slider event listener
+        if (this.confScoreInput) {
+            this.confScoreInput.addEventListener('input', (e) => {
+                this.confScoreVal.innerText = e.target.value + '%';
+            });
+        }
+
+        // Calibration modal buttons
+        if (this.confCancelBtn) {
+            this.confCancelBtn.addEventListener('click', () => {
+                this.confidenceModal.style.display = 'none';
+            });
+        }
+        if (this.confSubmitBtn) {
+            this.confSubmitBtn.addEventListener('click', () => {
+                const diagnosis = this.confDiagnosisInput.value.trim();
+                const confidence = this.confScoreInput.value;
+                this.confidenceModal.style.display = 'none';
+                this.sendViaWS("__END_SESSION__");
+                this.showSessionEndedState();
+                this.submitEvaluation(diagnosis, confidence);
+            });
+        }
+
+        // Physical Exam action buttons
+        const peBtns = this.shadowDOM.querySelectorAll('.pe-action-btn');
+        peBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget.getAttribute('data-target');
+                this.performEncounterAction('physical_exam', target);
+            });
+        });
+
+        // Lab action buttons
+        const labBtns = this.shadowDOM.querySelectorAll('.lab-action-btn');
+        labBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget.getAttribute('data-target');
+                this.performEncounterAction('lab_test', target);
+            });
+        });
 
         // Language toggle listeners
         const langBtns = this.shadowDOM.querySelectorAll('.lang-btn');
@@ -1899,6 +2034,11 @@ class AIPatientSimulator extends HTMLElement {
         this.sessionId = "session_" + Math.random().toString(36).substring(7);
         this.chatBox.innerHTML = "";
         if (this.activeModelName) this.activeModelName.innerText = "(รอเริ่มต้นบทสนทนา...)";
+        
+        // Reset timeline variables for clinical reasoning map
+        this.startTime = Date.now();
+        this.eventTimeline = [];
+        this.lastEvaluationData = null;
         
         // Reset voice speech parameters
         this.currentPatientMsgDiv = null;
@@ -2793,6 +2933,18 @@ class AIPatientSimulator extends HTMLElement {
             this.socket.onopen = () => {
                 this.status.innerText = (this.currentLanguage === 'en' ? "System ready..." : "ระบบพร้อมทำงาน...");
                 this.setupWizard.style.display = 'none';
+                
+                // Silent initialize session in SQLite DB immediately
+                const initPayload = {
+                    session_id: this.sessionId,
+                    student_text: "__INIT_SESSION__",
+                    case_id: this.selectedCaseId,
+                    student_id: this.studentId || "guest_student",
+                    student_name: this.studentName || "Guest Student"
+                };
+                if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify(initPayload));
+                }
             };
 
             this.socket.onmessage = (event) => {
@@ -3043,6 +3195,14 @@ class AIPatientSimulator extends HTMLElement {
         const text = this.chatTextInput.value.trim();
         if (!text) return;
 
+        // Record event in timeline for clinical reasoning map
+        if (!this.eventTimeline) this.eventTimeline = [];
+        const elapsedSeconds = this.startTime ? Math.round((Date.now() - this.startTime) / 1000) : 0;
+        this.eventTimeline.push({
+            action: (this.currentLanguage === 'en' ? "Question: " : "คำถาม: ") + text,
+            time: elapsedSeconds
+        });
+
         // Clear the input field
         this.chatTextInput.value = "";
 
@@ -3236,10 +3396,150 @@ class AIPatientSimulator extends HTMLElement {
     }
 
     endSimulation() {
-        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการจบการซักประวัติ?")) {
-            this.sendViaWS("__END_SESSION__");
-            this.showSessionEndedState();
+        const lang = this.currentLanguage || 'th';
+        const confirmMsg = lang === 'en' 
+            ? "Are you sure you want to end the encounter?" 
+            : "คุณแน่ใจหรือไม่ว่าต้องการจบการซักประวัติ?";
+            
+        if (confirm(confirmMsg)) {
+            // Reset input values inside calibration gate
+            if (this.confDiagnosisInput) this.confDiagnosisInput.value = "";
+            if (this.confScoreInput) {
+                this.confScoreInput.value = "80";
+                if (this.confScoreVal) this.confScoreVal.innerText = "80%";
+            }
+            // Display calibration modal
+            if (this.confidenceModal) {
+                this.confidenceModal.style.display = 'flex';
+            } else {
+                // Fallback if modal elements failed to load
+                this.sendViaWS("__END_SESSION__");
+                this.showSessionEndedState();
+                this.showEvaluation();
+            }
         }
+    }
+
+    async submitEvaluation(suspectedDiagnosis, confidenceScore) {
+        this.evalModal.style.display = 'block';
+        this.evalResults.innerHTML = (this.currentLanguage === 'en')
+            ? "<p style='text-align:center;'>Processing clinical evaluation by AI... (May take 10-30 seconds)</p>"
+            : "<p style='text-align:center;'>กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
+
+        try {
+            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+            const payload = {
+                suspected_diagnosis: suspectedDiagnosis,
+                confidence_score: parseInt(confidenceScore) || 0,
+                event_timeline: this.eventTimeline || [],
+                language: this.currentLanguage || 'th'
+            };
+            
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/evaluate/${this.sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                this.evalResults.innerHTML = `<p style='color:red;'>Error: ${data.error}</p>`;
+                return;
+            }
+
+            this.lastEvaluationData = data;
+            this.evalResults.innerHTML = this.renderEvaluationHTML(data);
+        } catch (e) {
+            console.error("Evaluation submission failed:", e);
+            this.evalResults.innerHTML = (this.currentLanguage === 'en')
+                ? `<p style='color:red;'>Failed to connect to server for evaluation.</p>`
+                : `<p style='color:red;'>ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์เพื่อประเมินได้</p>`;
+        }
+    }
+
+    async performEncounterAction(actionType, target) {
+        if (!this.sessionId) return;
+        
+        // Append a temporary loading or notice in the chat
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'msg patient';
+        loadingDiv.innerHTML = this.currentLanguage === 'en' 
+            ? `<i>Performing ${actionType === 'physical_exam' ? 'Physical Exam' : 'Lab Test'}: ${target}...</i>`
+            : `<i>กำลังทำการตรวจ/ส่งแล็บ: ${target}...</i>`;
+        this.chatBox.appendChild(loadingDiv);
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+        
+        // Track relative elapsed seconds
+        const elapsedSeconds = this.startTime ? Math.round((Date.now() - this.startTime) / 1000) : 0;
+        
+        // Store in eventTimeline for reasoning map timeline
+        if (!this.eventTimeline) this.eventTimeline = [];
+        this.eventTimeline.push({
+            action: (actionType === 'physical_exam' ? 'Physical Exam: ' : 'Lab Request: ') + target,
+            time: elapsedSeconds
+        });
+        
+        try {
+            const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;
+            const payload = {
+                session_id: this.sessionId,
+                action_type: actionType,
+                target: target,
+                elapsed_seconds: elapsedSeconds,
+                language: this.currentLanguage || 'th',
+                case_id: this.selectedCaseId || ""
+            };
+            
+            const response = await fetch(`${fetchBase.replace(/\/$/, '')}/api/encounter/action`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': '1'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                loadingDiv.className = 'msg patient'; // display as patient/system bubble
+                let formattedResult = data.result;
+                if (formattedResult.includes('|')) {
+                    formattedResult = this.parseMarkdownTable(formattedResult);
+                    loadingDiv.innerHTML = `<b>[${actionType === 'physical_exam' ? 'Physical Exam' : 'Lab Result'}: ${target}]</b><br>${formattedResult}`;
+                } else {
+                    loadingDiv.innerHTML = `<b>[${actionType === 'physical_exam' ? 'Physical Exam' : 'Lab Result'}: ${target}]</b><br>${formattedResult}`;
+                }
+            } else {
+                loadingDiv.innerText = `❌ Error: ${data.message || 'Failed to execute action'}`;
+            }
+        } catch (e) {
+            console.error("Encounter action failed:", e);
+            loadingDiv.innerText = `❌ Error: Connection failed`;
+        }
+        this.chatBox.scrollTop = this.chatBox.scrollHeight;
+    }
+
+    parseMarkdownTable(md) {
+        const lines = md.trim().split('\n');
+        let html = '<table style="width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11.5px; text-align: left; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">';
+        let rowCount = 0;
+        for (const line of lines) {
+            if (!line.includes('|')) continue;
+            if (line.includes('---')) continue; // Skip header divider
+            
+            const cells = line.split('|').map(c => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+            html += '<tr style="' + (rowCount === 0 ? 'background-color: #f1f5f9; font-weight: bold; border-bottom: 2px solid #cbd5e1;' : 'border-bottom: 1px solid #e2e8f0;') + '">';
+            for (const cell of cells) {
+                html += `<td style="padding: 6px 8px;">${cell}</td>`;
+            }
+            html += '</tr>';
+            rowCount++;
+        }
+        html += '</table>';
+        return html;
     }
 
     newSimulation() {
@@ -3251,6 +3551,7 @@ class AIPatientSimulator extends HTMLElement {
         this.currentPatientMsgDiv = null;
         this.ttsQueue = [];
         this.isSpeaking = false;
+        this.lastEvaluationData = null;
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
@@ -3263,7 +3564,10 @@ class AIPatientSimulator extends HTMLElement {
     }
 
     renderEvaluationHTML(data) {
-        let html = `<div style='text-align:center; font-size: 24px; margin-bottom: 20px;'>คะแนนรวม: <b>${data.overall_score || data.total_score || 0}/5</b></div>`;
+        const lang = this.currentLanguage || 'th';
+        const rawScore = data.overall_score || data.total_score || 0;
+        const totalLabel = lang === 'en' ? 'Checklist Score:' : 'คะแนนรวม:';
+        let html = `<div style='text-align:center; font-size: 24px; margin-bottom: 20px;'>${totalLabel} <b>${rawScore}/5</b></div>`;
         
         const scores = data.scores || {};
         for (const [key, score] of Object.entries(scores)) {
@@ -3281,21 +3585,172 @@ class AIPatientSimulator extends HTMLElement {
         const weaknesses = feedback.weaknesses || [];
         const suggestion = feedback.suggestion || "";
 
+        const strengthsLabel = lang === 'en' ? 'Strengths:' : 'จุดเด่น:';
+        const weaknessesLabel = lang === 'en' ? 'Areas for Improvement:' : 'จุดที่ควรพัฒนา:';
+        const suggestionLabel = lang === 'en' ? 'Recommendations:' : 'คำแนะนำเพิ่มเติม:';
+
         html += `
             <div class="feedback-section">
-                <p class="strength">จุดเด่น:</p>
+                <p class="strength">${strengthsLabel}</p>
                 <ul>${strengths.map(s => `<li>${s}</li>`).join('')}</ul>
-                <p class="weakness">จุดที่ควรพัฒนา:</p>
+                <p class="weakness">${weaknessesLabel}</p>
                 <ul>${weaknesses.map(w => `<li>${w}</li>`).join('')}</ul>
-                <p><b>คำแนะนำเพิ่มเติม:</b> ${suggestion}</p>
+                <p><b>${suggestionLabel}</b> ${suggestion}</p>
             </div>
         `;
+
+        // Render pivoted Clinical Reasoning Map and Metacognitive Calibration
+        if (data.reasoning_map) {
+            const mapData = data.reasoning_map;
+            const calibration = mapData.calibration || {};
+            const pacing = mapData.pacing_feedback || {};
+            const hypotheses = mapData.hypotheses_mapped || [];
+            const divergences = mapData.divergences || [];
+            const missed = mapData.missed_opportunities || [];
+            
+            const actualPercent = Math.round(rawScore * 20);
+            
+            const titleText = lang === 'en' ? '🔍 Clinical Reasoning Mirror' : '🔍 วิเคราะห์การตัดสินใจและเหตุผลการวินิจฉัย';
+            const metaTitle = lang === 'en' ? 'Metacognitive Calibration' : 'Metacognitive Calibration (การสอบทานการรับรู้)';
+            const diagLabel = lang === 'en' ? 'Suspected Diagnosis:' : 'วินิจฉัยของคุณ:';
+            
+            let statusText = '';
+            if (calibration.is_correct) {
+                statusText = lang === 'en' ? '<span style="color:green; font-weight:bold;">Correct / สอดคล้อง</span>' : '<span style="color:green; font-weight:bold;">ถูกต้อง / สอดคล้อง</span>';
+            } else {
+                statusText = lang === 'en' ? '<span style="color:red; font-weight:bold;">Discrepant / ไม่สอดคล้อง</span>' : '<span style="color:red; font-weight:bold;">ยังไม่สอดคล้อง / ต้องสอบทานเพิ่มเติม</span>';
+            }
+            
+            const confLabel = lang === 'en' ? 'Your Confidence:' : 'ความมั่นใจของคุณ:';
+            const perfLabel = lang === 'en' ? 'Checklist Performance:' : 'คะแนนทักษะจริง:';
+            const pacingTitle = lang === 'en' ? 'Pacing & Time Management' : 'Pacing & Time Management (การบริหารเวลา)';
+            const timelineTitle = lang === 'en' ? 'Reasoning & Hypothesis Timeline' : 'เส้นทางความคิดและสมมติฐานการซักประวัติ';
+            const hypothesisLabel = lang === 'en' ? 'Hypothesis tested:' : 'สมมติฐานที่ตรวจหา:';
+            const divergenceTitle = lang === 'en' ? '⚠️ Divergence Points (จุดที่ออกนอกเส้นทางเป้าหมาย)' : '⚠️ Divergence Points (จุดที่ออกนอกเส้นทางเป้าหมาย)';
+            const missedTitle = lang === 'en' ? '❌ Missed Opportunities (จุดที่ขาดความรอบคอบ)' : '❌ Missed Opportunities (จุดที่ขาดความรอบคอบ)';
+            
+            const actionHeader = lang === 'en' ? 'Action:' : 'การกระทำ:';
+            const reasonHeader = lang === 'en' ? 'Explanation:' : 'เหตุผล:';
+            const missedHeader = lang === 'en' ? 'What was missed:' : 'สิ่งที่ขาดไป:';
+            const sigHeader = lang === 'en' ? 'Clinical significance:' : 'ความสำคัญ:';
+
+            const diagAccuracyPercent = calibration.is_correct ? 100 : 0;
+            const diagAccuracyLabel = lang === 'en' ? 'Diagnostic Accuracy:' : 'ความถูกต้องของการวินิจฉัย:';
+            const diagAccuracyColor = calibration.is_correct ? '#10b981' : '#ef4444';
+            
+            html += `
+                <div class="reasoning-map-container" style="margin-top: 25px; border-top: 2px solid #e2e8f0; padding-top: 20px; text-align: left; font-family: inherit;">
+                    <h3 style="color: #1e3a8a; font-size: 16px; margin-top: 0; font-weight: 800; border-bottom: 2px solid #2563eb; padding-bottom: 6px; display: inline-block;">${titleText}</h3>
+                    
+                    <!-- Calibration Bar -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; margin-top: 15px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #334155; font-weight: bold;">${metaTitle}</h4>
+                        <div style="font-size: 12px; color: #475569; margin-bottom: 5px;">
+                            ${diagLabel} <b style="color: #1e3a8a;">${calibration.student_diagnosis || 'N/A'}</b> 
+                            (${statusText})
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 2px;">
+                                    <span>${diagAccuracyLabel}</span>
+                                    <b>${diagAccuracyPercent}%</b>
+                                </div>
+                                <div style="width: 100%; background-color: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                                    <div style="width: ${diagAccuracyPercent}%; background-color: ${diagAccuracyColor}; height: 100%;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 2px;">
+                                    <span>${perfLabel}</span>
+                                    <b>${actualPercent}%</b>
+                                </div>
+                                <div style="width: 100%; background-color: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                                    <div style="width: ${actualPercent}%; background-color: #3b82f6; height: 100%;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; margin-bottom: 2px;">
+                                    <span>${confLabel}</span>
+                                    <b>${calibration.student_confidence || 0}%</b>
+                                </div>
+                                <div style="width: 100%; background-color: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden;">
+                                    <div style="width: ${calibration.student_confidence || 0}%; background-color: #f59e0b; height: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size: 12px; color: #1e40af; font-weight: bold; margin-top: 12px; line-height: 1.4; padding: 8px 10px; background-color: #eff6ff; border-radius: 6px;">
+                            💡 ${calibration.gap_analysis || ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Pacing Feedback -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #334155; font-weight: bold;">${pacingTitle}</h4>
+                        <div style="font-size: 12px; color: #475569; line-height: 1.4; margin-bottom: 10px;">⏱️ ${pacing.timeline_summary || ''}</div>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #475569; line-height: 1.5;">
+                            ${(pacing.efficiency_recommendations || []).map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <!-- Timeline Reasoning Map -->
+                    <h4 style="margin: 20px 0 12px 0; font-size: 13px; color: #334155; font-weight: bold;">${timelineTitle}</h4>
+                    <div style="position: relative; border-left: 2px dashed #cbd5e1; padding-left: 15px; margin-left: 10px; margin-bottom: 20px; text-align: left;">
+                        ${hypotheses.map(h => `
+                            <div style="position: relative; margin-bottom: 15px;">
+                                <div style="position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background-color: #3b82f6; border: 2px solid #ffffff;"></div>
+                                <div style="font-size: 11px; color: #64748b; font-weight: bold;">[${h.timestamp}]</div>
+                                <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-top: 2px;">${h.action}</div>
+                                <div style="font-size: 12px; color: #2563eb; margin-top: 1px;">${hypothesisLabel} <b>${h.hypothesis}</b></div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Divergences -->
+                    ${divergences.length > 0 ? `
+                        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #d97706; display: flex; align-items: center; gap: 5px; font-weight: bold;">${divergenceTitle}</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                ${divergences.map(d => `
+                                    <div style="font-size: 12px; line-height: 1.4; color: #475569;">
+                                        <b>${actionHeader}</b> ${d.action}<br>
+                                        <span style="color: #b45309;"><b>${reasonHeader}</b> ${d.explanation}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Missed Opportunities -->
+                    ${missed.length > 0 ? `
+                        <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 15px;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 13px; color: #dc2626; display: flex; align-items: center; gap: 5px; font-weight: bold;">${missedTitle}</h4>
+                            <div style="display: flex; flex-direction: column; gap: 10px;">
+                                ${missed.map(m => `
+                                    <div style="font-size: 12px; line-height: 1.4; color: #475569;">
+                                        <b>${missedHeader}</b> <span style="color:#b91c1c; font-weight:bold;">${m.missed}</span><br>
+                                        <b>${sigHeader}</b> ${m.reason}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
         return html;
     }
 
     async showEvaluation() {
         this.evalModal.style.display = 'block';
-        this.evalResults.innerHTML = "<p style='text-align:center;'>กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
+        if (this.lastEvaluationData) {
+            this.evalResults.innerHTML = this.renderEvaluationHTML(this.lastEvaluationData);
+            return;
+        }
+        
+        this.evalResults.innerHTML = this.currentLanguage === 'en'
+            ? "<p style='text-align:center;'>Loading clinical evaluation... (Please wait)</p>"
+            : "<p style='text-align:center;'>กำลังประมวลผลการประเมินโดย AI... (อาจใช้เวลา 10-30 วินาที)</p>";
 
         try {
             const fetchBase = this.serverUrl.startsWith('http') ? this.serverUrl : window.location.origin;

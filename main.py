@@ -73,6 +73,16 @@ class DB_QuotaUsage(Base):
     date_str = Column(String, index=True) # YYYY-MM-DD
     count = Column(Integer, default=0)
 
+class DB_Action(Base):
+    __tablename__ = "actions"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    session_id = Column(String, index=True)
+    action_type = Column(String) # "physical_exam" or "lab_test"
+    target = Column(String) # e.g. "Abdomen" or "CBC"
+    result = Column(Text)
+    elapsed_seconds = Column(Integer)
+    created_at = Column(DateTime)
+
 Base.metadata.create_all(bind=engine)
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -154,6 +164,20 @@ class CaseCreateRequest(BaseModel):
 class AuthRequest(BaseModel):
     role: str
     passcode: str
+
+class ActionRequest(BaseModel):
+    session_id: str
+    action_type: str # "physical_exam" or "lab_test"
+    target: str # e.g. "Abdomen", "CBC"
+    elapsed_seconds: int
+    language: str = "th"
+    case_id: str = ""
+
+class EvaluationPostRequest(BaseModel):
+    suspected_diagnosis: str
+    confidence_score: int
+    event_timeline: list = []
+    language: str = "th"
 
 def get_random_case():
     if not all_cases or not all_cases['ids']:
@@ -562,6 +586,118 @@ async def delete_case(case_id: str):
         print(f"Error deleting case: {e}")
         return {"status": "error", "message": str(e)}
 
+CLINICAL_FINDINGS_SYSTEM_PROMPT = """You are a simulated patient's physical state.
+Based on the patient's case details, hidden medical record, and the requested physical examination or laboratory test, you must generate a highly realistic, professional medical-grade finding.
+
+If the requested examination/test is relevant to the patient's pathology, describe the abnormal findings.
+If the requested examination/test is NOT relevant to the patient's pathology, describe normal findings.
+
+Keep descriptions concise and professional.
+For laboratory/imaging reports, return them formatted as a clean markdown table showing the parameters, values, reference ranges, and units (with abnormalities clearly visible).
+Do not add any meta-commentary, introductory text, or explanations. Return ONLY the finding description or the markdown table.
+
+If language is "en", you must generate the findings in English. If language is "th", you must generate the findings in Thai."""
+
+async def generate_clinical_finding(case_data: dict, action_type: str, target: str, language: str = "th") -> str:
+    try:
+        case_info = f"Case Scenario: {case_data['scenario_name']}\nChief Complaint: {case_data['chief_complaint']}\nHidden Medical Record details: {json.dumps(case_data['hidden_record'], ensure_ascii=False)}"
+        
+        user_prompt = f"""--- CLINICAL CASE ---
+{case_info}
+
+--- REQUEST ---
+Action Type: {action_type}
+Target Area/Test: {target}
+Language Mode: {language}
+
+Please generate the findings:"""
+
+        try:
+            response = await ollama_client.chat(
+                model=OLLAMA_MODEL,
+                messages=[
+                    {'role': 'system', 'content': CLINICAL_FINDINGS_SYSTEM_PROMPT},
+                    {'role': 'user', 'content': user_prompt}
+                ]
+            )
+            return response['message']['content'].strip()
+        except Exception as async_err:
+            print(f"Async ollama_client failed, falling back to sync client: {async_err}")
+            sync_client = ollama.Client(host=OLLAMA_HOST)
+            response = sync_client.chat(
+                model=OLLAMA_MODEL,
+                messages=[
+                    {'role': 'system', 'content': CLINICAL_FINDINGS_SYSTEM_PROMPT},
+                    {'role': 'user', 'content': user_prompt}
+                ]
+            )
+            return response['message']['content'].strip()
+    except Exception as e:
+        print(f"Error generating clinical finding: {e}")
+        if language == "en":
+            return "Normal findings (Default fallback)"
+        else:
+            return "ผลตรวจปกติ (ระบบตรวจจำลองสำเร็จ)"
+
+@app.post("/api/encounter/action")
+async def perform_encounter_action(action_req: ActionRequest):
+    session_id = action_req.session_id
+    action_type = action_req.action_type
+    target = action_req.target
+    elapsed_seconds = action_req.elapsed_seconds
+    language = action_req.language
+    
+    session_data = load_session_from_sqlite(session_id)
+    if not session_data:
+        # Dynamically initialize and save session so that exams/labs never throw Session not found
+        student_id = "guest_student"
+        student_name = "Guest Student"
+        
+        if action_req.case_id:
+            case_data = get_case_by_id(action_req.case_id)
+        else:
+            case_data = get_random_case()
+            
+        session_data = {
+            'session_id': session_id,
+            'student_id': student_id,
+            'student_name': student_name,
+            'history': [],
+            'case_data': case_data,
+            'revealed_info': {},
+            'status': 'active',
+            'created_at': datetime.now().isoformat()
+        }
+        save_session_to_sqlite(session_data)
+        chat_sessions[session_id] = session_data
+        
+    case_data = session_data.get('case_data')
+    if not case_data:
+        return {"status": "error", "message": "Case data not found in session"}
+        
+    result = await generate_clinical_finding(case_data, action_type, target, language)
+    
+    db = SessionLocal()
+    try:
+        db_action = DB_Action(
+            session_id=session_id,
+            action_type=action_type,
+            target=target,
+            result=result,
+            elapsed_seconds=elapsed_seconds,
+            created_at=datetime.now()
+        )
+        db.add(db_action)
+        db.commit()
+    except Exception as db_err:
+        db.rollback()
+        print(f"Error saving action to DB: {db_err}")
+    finally:
+        db.close()
+        
+    return {"status": "success", "result": result}
+
+
 @app.get("/api/history/{student_id}")
 async def get_student_history(student_id: str):
     db = SessionLocal()
@@ -817,6 +953,14 @@ async def websocket_endpoint(websocket: WebSocket):
             elif user_msg_count == 29: # This is the 30th query
                 warning_suffix = "\n\n⚠️ (คำเตือน: คุณใช้ข้อความไปแล้ว 30 ข้อความ การสนทนาจะถูกปิดอัตโนมัติหลังจากนี้)"
             
+            # Check for silent initialization signal
+            if student_text == "__INIT_SESSION__":
+                await websocket.send_text(json.dumps({
+                    "type": "model_info",
+                    "model": OLLAMA_MODEL
+                }))
+                continue
+
             # Check for termination signal
             if student_text == "__END_SESSION__":
                 session_data['status'] = 'completed'
@@ -1025,13 +1169,50 @@ async def get_evaluation(session_id: str):
     if not session_data:
         return {"error": "Session not found"}
     
-    if 'evaluation' in session_data:
+    if 'evaluation' in session_data and session_data['evaluation']:
         return session_data['evaluation']
     
-    result = await evaluate_session(session_data)
+    result = await evaluate_session(session_data, language="th")
     if result:
         session_data['evaluation'] = result
         save_session_to_sqlite(session_data)
         return result
     
+    return {"error": "Evaluation failed"}
+
+@app.post("/api/evaluate/{session_id}")
+async def post_evaluation(session_id: str, eval_req: EvaluationPostRequest):
+    session_data = load_session_from_sqlite(session_id)
+    if not session_data:
+        return {"error": "Session not found"}
+        
+    db = SessionLocal()
+    actions = []
+    try:
+        db_actions = db.query(DB_Action).filter(DB_Action.session_id == session_id).order_by(DB_Action.elapsed_seconds.asc()).all()
+        actions = [{
+            "action_type": a.action_type,
+            "target": a.target,
+            "result": a.result,
+            "elapsed_seconds": a.elapsed_seconds
+        } for a in db_actions]
+    except Exception as db_err:
+        print(f"Error loading actions from DB: {db_err}")
+    finally:
+        db.close()
+        
+    result = await evaluate_session(
+        session_data=session_data,
+        suspected_diagnosis=eval_req.suspected_diagnosis,
+        confidence_score=eval_req.confidence_score,
+        event_timeline=eval_req.event_timeline,
+        actions=actions,
+        language=eval_req.language
+    )
+    
+    if result:
+        session_data['evaluation'] = result
+        save_session_to_sqlite(session_data)
+        return result
+        
     return {"error": "Evaluation failed"}
